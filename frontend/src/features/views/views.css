@@ -1,0 +1,277 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── empty state ───────────────────────────────────────────────────────── */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 58px 32px 62px;
+  text-align: center;
+}
+
+.empty-mark {
+  width: 34px;
+  height: 34px;
+  margin-bottom: 8px;
+  border-radius: var(--r-sm);
+  border: 1px dashed var(--line-firm);
+  background: var(--surface-sunk);
+}
+
+.empty h2 {
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.empty p {
+  max-width: 44ch;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.empty .btn {
+  margin-top: 12px;
+}
+
+/* ── stage filter ──────────────────────────────────────────────────────── */
+.stage-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.stage-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line-firm);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 12.5px;
+  font-weight: 550;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease),
+    color 0.15s var(--ease);
+}
+
+.stage-tab:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+
+.stage-tab.is-on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.stage-tab em {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--paper-deep);
+  color: var(--ink-2);
+}
+
+.stage-tab.is-on em {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.stage-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 24px 42px;
+  text-align: center;
+}
+
+.stage-empty p {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+/* ── table ─────────────────────────────────────────────────────────────── */
+.table-card {
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  padding: 11px 18px;
+  text-align: left;
+  font-size: 9.5px;
+  font-weight: 650;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  background: var(--surface-sunk);
+  border-bottom: 1px solid var(--line);
+}
+
+.table td {
+  padding: 13px 18px;
+  font-size: 13px;
+  color: var(--ink-2);
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.row-clickable {
+  cursor: pointer;
+  transition: background 0.14s var(--ease);
+}
+
+.row-clickable:hover td {
+  background: var(--surface-sunk);
+}
+
+.table .strong {
+  color: var(--ink);
+  font-weight: 570;
+}
+
+.cell-title {
+  display: block;
+  color: var(--ink);
+  font-weight: 570;
+}
+
+.cell-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ── reference ─────────────────────────────────────────────────────────── */
+.ref-panel {
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.ref-axes,
+.ref-levels {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ref-axes li {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 4px 16px;
+  padding: 10px 14px;
+  border-radius: var(--r-sm);
+  font-size: 12.5px;
+}
+
+.ref-axes li:nth-child(odd) {
+  background: var(--surface-sunk);
+}
+
+.ref-axes strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ref-axes span {
+  color: var(--ink-2);
+}
+
+.ref-axes em {
+  grid-column: 2;
+  font-style: normal;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.ref-levels li {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+  gap: 16px;
+  padding: 9px 14px;
+  border-radius: var(--r-sm);
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.ref-levels li:nth-child(odd) {
+  background: var(--surface-sunk);
+}
+
+.ref-levels strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ref-levels li.is-target {
+  background: var(--accent-soft);
+}
+
+.ref-levels li.is-target strong {
+  color: var(--accent-deep);
+}
+
+.ref-note {
+  margin-top: 10px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+.cell-patient {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.col-tight {
+  width: 1%;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .ref-axes li,
+  .ref-levels li {
+    grid-template-columns: 1fr;
+  }
+  .ref-axes em {
+    grid-column: 1;
+  }
+  /* Dropped by class rather than column index — the professor's table has an
+     extra leading column, so nth-child would hide the wrong one. */
+  .table .col-optional {
+    display: none;
+  }
+}

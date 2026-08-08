@@ -1,0 +1,46 @@
+# OpBook360 — one ignore file for both halves of the repo.
+
+# ── secrets ───────────────────────────────────────────────────────────────
+# backend/.env holds the live Corti client secret and the Atlas connection
+# string. It must never be committed; backend/.env.example is the template
+# that is, and the negation keeps it that way if this pattern ever widens.
+.env*
+.env.local
+.env.*.local
+.env.example
+
+# ── python / backend ──────────────────────────────────────────────────────
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# ── node / frontend ───────────────────────────────────────────────────────
+node_modules/
+dist/
+# Written by `tsc -b` — a build cache, not source.
+*.tsbuildinfo
+.vite/
+npm-debug.log*
+yarn-error.log*
+
+# ── local tooling ─────────────────────────────────────────────────────────
+.claude/
+
+# ── runtime junk ──────────────────────────────────────────────────────────
+*.log
+*.db
+*.sqlite3
+
+# ── editors and operating systems ─────────────────────────────────────────
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp

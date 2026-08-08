@@ -1,0 +1,75 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   OpBook360 — design tokens
+
+   Cool neutral surfaces, a deep navy rail, and three accents that carry
+   meaning rather than decoration:
+
+     accent (indigo) — the system's own reasoning: competency, questions, marks
+     warm   (amber)  — what a human asserted: the role claimed, the axes certified
+     alert  (rose)   — the Critical item, and only ever the Critical item
+
+   Colours are referenced by role, never by hue, so the theme can move without
+   touching a single component.
+   ───────────────────────────────────────────────────────────────────────── */
+:root {
+  /* surfaces */
+  --paper: #f5f6f9;
+  --paper-deep: #e9ecf2;
+  --surface: #ffffff;
+  --surface-sunk: #f8fafc;
+  --rail: #0e1526;
+  --rail-raised: #1b2438;
+
+  /* rules */
+  --line: #e7eaf0;
+  --line-firm: #d3d8e2;
+
+  /* text */
+  --ink: #0f172a;
+  --ink-2: #4b566b;
+  --ink-3: #8a94a8;
+  --ink-rail: #97a1b7;
+  --ink-rail-hi: #f2f5fa;
+
+  /* accent — the system's reasoning */
+  --accent: #4f46e5;
+  --accent-deep: #4338ca;
+  --accent-lift: #6366f1;
+  --accent-soft: #eef0ff;
+  --accent-line: #ccd0fb;
+
+  /* warm — what a human asserted */
+  --warm: #b8730c;
+  --warm-deep: #8c570a;
+  --warm-soft: #fdf7ea;
+  --warm-line: #f0ddb6;
+
+  /* ok — a pass, a correct answer, a cleared Critical item */
+  --ok: #0f7a5a;
+  --ok-soft: #edf8f3;
+  --ok-line: #bfe4d5;
+
+  /* alert — the Critical / fatal-error item only */
+  --alert: #d92d3f;
+  --alert-soft: #fef2f3;
+  --alert-line: #f8ccd1;
+
+  /* shape */
+  --r-xs: 6px;
+  --r-sm: 9px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-sm: 0 2px 8px -2px rgba(15, 23, 42, 0.1);
+  --shadow-md: 0 12px 26px -12px rgba(15, 23, 42, 0.24);
+  --shadow-lg: 0 26px 50px -22px rgba(15, 23, 42, 0.32);
+
+  /* type — one modern sans; hierarchy comes from size, weight and tracking */
+  --sans: 'Inter var', Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --display: var(--sans);
+  --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+
+  --rail-w: 244px;
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+}

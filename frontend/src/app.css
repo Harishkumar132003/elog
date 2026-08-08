@@ -1,0 +1,32 @@
+.shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  height: 100vh;
+  overflow-y: auto;
+  background:
+    radial-gradient(110% 55% at 50% 0%, #fbfcfe 0%, transparent 62%),
+    var(--paper);
+}
+
+.main-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 38px 34px 72px;
+}
+
+/* Held while the stored session is checked — avoids a login-screen flash. */
+.boot {
+  min-height: 100vh;
+  background: var(--paper);
+}
+
+@media (max-width: 620px) {
+  .main-inner {
+    padding: 24px 16px 52px;
+  }
+}

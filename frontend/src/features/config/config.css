@@ -1,0 +1,258 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Configuration — the competency catalogue.
+
+   One list, edited in place. Extracted rows join the same list rather than
+   sitting in a staging area, so there is one place to look and one Save. The
+   "from PDF" pill wears the accent because it marks the system's own proposal,
+   the same as everywhere else in the app.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.cfg-subject {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.cfg-subject label {
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.cfg-count {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── import ────────────────────────────────────────────────────────────── */
+.cfg-import {
+  padding: 18px 20px 20px;
+  margin-bottom: 14px;
+}
+
+.cfg-import > header {
+  margin-bottom: 14px;
+}
+
+.cfg-import h2 {
+  margin-top: 4px;
+  font-size: 15px;
+  font-weight: 620;
+  letter-spacing: -0.014em;
+}
+
+.cfg-import > header p {
+  margin-top: 4px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-3);
+  max-width: 62ch;
+}
+
+.cfg-import-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* The browser's own file button, restyled to match .btn-quiet rather than
+   replaced — a hidden input plus a fake button loses the filename readout. */
+.cfg-file {
+  flex: 1 1 260px;
+  min-width: 0;
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.cfg-file::file-selector-button {
+  margin-right: 12px;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--line-firm);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: border-color 0.16s var(--ease);
+}
+
+.cfg-file::file-selector-button:hover {
+  border-color: var(--ink-3);
+}
+
+.cfg-file:disabled {
+  opacity: 0.5;
+}
+
+.cfg-job {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-sunk);
+}
+
+.cfg-job p {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.cfg-job .meter + p {
+  margin-top: 9px;
+}
+
+.cfg-job.is-failed {
+  border-color: var(--alert-line);
+  background: var(--alert-soft);
+}
+
+.cfg-job.is-failed p {
+  color: var(--alert);
+}
+
+/* ── the list ──────────────────────────────────────────────────────────── */
+.cfg-list {
+  padding: 0;
+  overflow: hidden;
+}
+
+.cfg-list .panel-head {
+  padding: 16px 18px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.cfg-empty {
+  padding: 26px 20px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+.cfg-rows {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px;
+  max-height: 62vh;
+  overflow-y: auto;
+}
+
+.cfg-rows li {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 5px 8px;
+  border-radius: var(--r-sm);
+}
+
+.cfg-rows li:hover {
+  background: var(--surface-sunk);
+}
+
+.cfg-num {
+  flex: 0 0 auto;
+  width: 26px;
+  font-size: 11px;
+  color: var(--ink-3);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.cfg-field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.cfg-field input {
+  width: 100%;
+  height: 34px;
+  padding: 0 11px;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: 13.5px;
+  outline: none;
+  transition:
+    border-color 0.16s var(--ease),
+    background 0.16s var(--ease),
+    box-shadow 0.16s var(--ease);
+}
+
+.cfg-field input::placeholder {
+  color: var(--ink-3);
+}
+
+.cfg-field input:hover {
+  border-color: var(--line);
+}
+
+.cfg-field input:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.cfg-warn {
+  display: block;
+  padding: 2px 11px 0;
+  font-size: 10.5px;
+  color: var(--warm-deep);
+}
+
+.cfg-rows li.is-duplicate .cfg-field input {
+  border-color: var(--warm-line);
+  background: var(--warm-soft);
+}
+
+.cfg-drop {
+  flex: 0 0 auto;
+  border: 0;
+  background: none;
+  padding: 4px 6px;
+  font-family: inherit;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  cursor: pointer;
+  border-radius: var(--r-xs);
+  opacity: 0;
+  transition:
+    color 0.16s var(--ease),
+    opacity 0.16s var(--ease);
+}
+
+/* Revealed on hover so 200 rows are not 200 shouting buttons — but always
+   present for the keyboard, which never triggers hover. */
+.cfg-rows li:hover .cfg-drop,
+.cfg-drop:focus-visible {
+  opacity: 1;
+}
+
+.cfg-drop:hover {
+  color: var(--alert);
+}
+
+.cfg-list .panel-foot {
+  border-top: 1px solid var(--line);
+  padding: 12px 18px;
+}
+
+@media (max-width: 720px) {
+  .cfg-import-row {
+    align-items: stretch;
+  }
+}
