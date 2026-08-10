@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  backend:
+    build: .
+    container_name: elog-backend
+    restart: always
+    ports:
+      - "7200:7200"
+    env_file:
+      - .env
+    networks:
+      - shared-app-network
+
+networks:
+  shared-app-network:
+    external: true

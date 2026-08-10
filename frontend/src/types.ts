@@ -306,6 +306,8 @@ export interface Dashboard {
     covered: number
     percentage: number
     competencies: { id: string; title: string; logged: number; retired: boolean }[]
+    /** Curriculum competencies with no evidence yet — the actionable half. */
+    gaps: { id: string; title: string }[]
   }[]
   outcomes: { key: string; label: string; count: number }[]
   critical_failed: number

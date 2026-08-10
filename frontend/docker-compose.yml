@@ -1,0 +1,18 @@
+services:
+  elog-frontend:
+    build:
+      context: .
+      args:
+        # Baked into the bundle at build time. Point it at wherever the backend
+        # is reachable FROM THE BROWSER — not the compose service name, which
+        # only resolves inside the network.
+        VITE_API_URL: ${VITE_API_URL:-/api}
+    ports:
+      - "7205:7205"
+    networks:
+      - shared-app-network
+    restart: unless-stopped
+
+networks:
+  shared-app-network:
+    external: true

@@ -30,6 +30,13 @@ class CoveredCompetency(BaseModel):
     retired: bool = False
 
 
+class CompetencyGap(BaseModel):
+    """A competency in the curriculum with no evidence logged against it yet."""
+
+    id: str
+    title: str
+
+
 class CoverageRow(BaseModel):
     """One per subject: the ratio, then only the competencies with evidence.
 
@@ -42,6 +49,7 @@ class CoverageRow(BaseModel):
     covered: int = 0
     percentage: int = 0
     competencies: list[CoveredCompetency] = []
+    gaps: list[CompetencyGap] = []
 
 
 class Bucket(BaseModel):

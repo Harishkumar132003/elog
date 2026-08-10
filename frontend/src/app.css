@@ -8,21 +8,26 @@
   min-width: 0;
   height: 100vh;
   overflow-y: auto;
-  background:
-    radial-gradient(110% 55% at 50% 0%, #fbfcfe 0%, transparent 62%),
-    var(--paper);
+  /* Flat, like the reference: the cards provide the depth, not the page. */
+  background: var(--paper);
 }
 
 .main-inner {
-  max-width: 960px;
+  max-width: var(--shell-w);
   margin: 0 auto;
-  padding: 38px 34px 72px;
+  padding: 44px 44px 88px;
 }
 
 /* Held while the stored session is checked — avoids a login-screen flash. */
 .boot {
   min-height: 100vh;
   background: var(--paper);
+}
+
+@media (max-width: 1100px) {
+  .main-inner {
+    padding: 34px 28px 72px;
+  }
 }
 
 @media (max-width: 620px) {

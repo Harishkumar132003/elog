@@ -5,7 +5,7 @@
   min-height: 100vh;
   padding: 24px;
   background:
-    radial-gradient(80% 55% at 50% 0%, #fbfcfe 0%, transparent 60%),
+    radial-gradient(80% 55% at 50% 0%, rgba(37, 99, 235, 0.12) 0%, transparent 60%),
     var(--paper);
 }
 
@@ -33,8 +33,8 @@
   height: 34px;
   flex: 0 0 auto;
   border-radius: 10px;
-  background: linear-gradient(155deg, var(--accent-lift), var(--accent-deep));
-  color: #fff;
+  background: var(--accent);
+  color: var(--on-accent);
   font-family: var(--display);
   font-size: 18px;
   font-weight: 700;
@@ -49,13 +49,13 @@
 
 .login-brand strong {
   font-family: var(--display);
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 600;
   letter-spacing: -0.012em;
 }
 
 .login-brand small {
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.04em;
   color: var(--ink-3);
 }
@@ -69,7 +69,7 @@
 
 .login-sub {
   margin-top: 5px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.55;
   color: var(--ink-2);
 }
@@ -88,7 +88,7 @@
 }
 
 .field span {
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 650;
   letter-spacing: 0.13em;
   text-transform: uppercase;
@@ -101,7 +101,7 @@
   border: 1px solid var(--line-firm);
   border-radius: var(--r-sm);
   background: var(--surface-sunk);
-  font-size: 14px;
+  font-size: 15px;
   outline: none;
   transition: border-color 0.16s var(--ease), box-shadow 0.16s var(--ease),
     background 0.16s var(--ease);
@@ -110,7 +110,7 @@
 .field input:focus {
   background: var(--surface);
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  box-shadow: var(--glow);
 }
 
 .login-error {
@@ -119,7 +119,7 @@
   border: 1px solid var(--alert-line);
   background: var(--alert-soft);
   color: var(--alert);
-  font-size: 12.5px;
+  font-size: 13.5px;
 }
 
 .login-submit {
@@ -141,13 +141,13 @@
 
 .login-demo-note {
   margin-top: 10px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--ink-3);
 }
 
 .login-demo-note code {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 11.5px;
   padding: 1px 5px;
   border-radius: 4px;
   background: var(--surface-sunk);

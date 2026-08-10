@@ -8,6 +8,9 @@
   padding: 22px 15px 14px;
   background: var(--rail);
   color: var(--ink-rail);
+  /* The rail is the same white as the cards, so it needs a rule to separate it
+     from the page rather than a change of tone. */
+  border-right: 1px solid var(--line);
   flex: 0 0 auto;
 }
 
@@ -22,15 +25,15 @@
 .rail-mark {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   flex: 0 0 auto;
-  border-radius: 9px;
-  background: linear-gradient(155deg, var(--accent-lift), var(--accent-deep));
-  color: #fff;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--on-accent);
   font-family: var(--display);
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 800;
   line-height: 1;
 }
 
@@ -44,15 +47,15 @@
 .rail-brand-text strong {
   font-family: var(--display);
   color: var(--ink-rail-hi);
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-size: 18px;
+  font-weight: 680;
+  letter-spacing: -0.018em;
 }
 
 .rail-brand-text small {
-  color: #79839a;
-  font-size: 10.5px;
-  letter-spacing: 0.04em;
+  color: var(--ink-rail);
+  font-size: 11.5px;
+  letter-spacing: 0.05em;
 }
 
 /* ── nav ───────────────────────────────────────────────────────────────── */
@@ -66,12 +69,12 @@
 }
 
 .rail-group-title {
-  padding: 0 9px 7px;
-  font-size: 9.5px;
-  font-weight: 650;
-  letter-spacing: 0.16em;
+  padding: 0 9px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.17em;
   text-transform: uppercase;
-  color: #69738a;
+  color: var(--ink-3);
 }
 
 /* Nav items are links now, so the anchor defaults need clearing. */
@@ -81,11 +84,11 @@
   align-items: center;
   gap: 11px;
   width: 100%;
-  padding: 9px 11px;
+  padding: 10px 12px;
   border-radius: var(--r-sm);
   color: var(--ink-rail);
-  font-size: 13.5px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 520;
   text-align: left;
   text-decoration: none;
   cursor: pointer;
@@ -93,13 +96,17 @@
 }
 
 .rail-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--rail-raised);
   color: var(--ink-rail-hi);
 }
 
+/* A tinted pill rather than a solid fill: on a white rail a block of saturated
+   blue would outweigh the page it is pointing at. The bar at the left edge is
+   what actually carries "you are here". */
 .rail-item.is-active {
-  background: var(--rail-raised);
-  color: var(--ink-rail-hi);
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  font-weight: 640;
 }
 
 .rail-item.is-active::before {
@@ -108,15 +115,15 @@
   left: -15px;
   top: 50%;
   width: 3px;
-  height: 17px;
+  height: 22px;
   border-radius: 0 3px 3px 0;
-  background: var(--accent-lift);
+  background: var(--accent);
   transform: translateY(-50%);
 }
 
 .rail-icon {
   flex: 0 0 auto;
-  opacity: 0.75;
+  opacity: 0.65;
 }
 
 .rail-item.is-active .rail-icon {
@@ -126,15 +133,15 @@
 .rail-count {
   margin-left: auto;
   font-style: normal;
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-variant-numeric: tabular-nums;
-  color: #0e1526;
-  background: var(--warm);
+  color: var(--on-accent);
+  background: var(--accent);
   border-radius: 999px;
-  min-width: 18px;
-  padding: 1px 6px;
+  min-width: 19px;
+  padding: 1px 7px;
   text-align: center;
-  font-weight: 650;
+  font-weight: 700;
 }
 
 /* ── weekly meter ──────────────────────────────────────────────────────── */
@@ -142,47 +149,47 @@
   margin: 16px 0 14px;
   padding: 13px;
   border-radius: var(--r-sm);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-sunk);
 }
 
 .rail-meter-head {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-size: 11.5px;
-  color: #97a1b7;
+  font-size: 12.5px;
+  color: var(--ink-3);
 }
 
 .rail-meter-head strong {
   color: var(--ink-rail-hi);
   font-variant-numeric: tabular-nums;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .rail-meter-track {
   height: 3px;
   margin: 9px 0 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--paper-deep);
   overflow: hidden;
 }
 
 .rail-meter-fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--accent), var(--accent-lift));
+  background: var(--accent);
   transition: width 0.45s var(--ease);
 }
 
 .rail-meter-note {
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.45;
-  color: #69738a;
+  color: var(--ink-3);
 }
 
 /* ── footer ────────────────────────────────────────────────────────────── */
 .rail-foot {
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-top: 1px solid var(--line);
   padding-top: 10px;
 }
 
@@ -201,9 +208,9 @@
   flex: 0 0 auto;
   border-radius: 50%;
   background: var(--rail-raised);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  color: #c2cbdc;
-  font-size: 10.5px;
+  border: 1px solid var(--line-firm);
+  color: var(--ink-2);
+  font-size: 11px;
   font-weight: 650;
   letter-spacing: 0.03em;
 }
@@ -217,8 +224,8 @@
 }
 
 .rail-user-text strong {
-  color: #e6eaf2;
-  font-size: 12.5px;
+  color: var(--ink);
+  font-size: 13.5px;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -226,8 +233,8 @@
 }
 
 .rail-user-text small {
-  color: #69738a;
-  font-size: 10.5px;
+  color: var(--ink-3);
+  font-size: 11px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -236,15 +243,15 @@
 .rail-signout {
   margin-left: auto;
   flex: 0 0 auto;
-  font-size: 10.5px;
-  color: #69738a;
+  font-size: 11px;
+  color: var(--ink-3);
   padding: 3px 6px;
   border-radius: var(--r-xs);
   transition: background 0.15s var(--ease), color 0.15s var(--ease);
 }
 
 .rail-signout:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--rail-raised);
   color: var(--ink-rail-hi);
 }
 
@@ -275,6 +282,7 @@
     padding: 10px 0;
   }
 
+  /* The rail's own padding shrinks here, so the indicator follows it. */
   .rail-item.is-active::before {
     left: -11px;
   }

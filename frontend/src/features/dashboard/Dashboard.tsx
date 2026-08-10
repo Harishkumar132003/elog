@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { AlertIcon, CheckIcon } from '../../components/icons'
 import { getDashboard } from '../../lib/entries'
 import type { Dashboard as DashboardData, EntryStatus } from '../../types'
+import { CoverageDialog } from './CoverageDialog'
 import './dashboard.css'
 
 const formatDate = new Intl.DateTimeFormat(undefined, { day: '2-digit', month: 'short' })
@@ -45,6 +46,59 @@ function Meter({ value, tone = 'accent' }: { value: number; tone?: 'accent' | 'w
   )
 }
 
+/** Evidence is not binary. One logged case and five are both "covered" on a
+ *  ratio, and they are not the same thing to an examiner. */
+function depth(cases: number): string {
+  if (cases >= 5) return 'is-solid'
+  if (cases >= 3) return 'is-mid'
+  return 'is-thin'
+}
+
+/** A curriculum can run past a hundred competencies; past this the grid stops
+ *  being a glance and the count carries it instead. */
+const MAX_SQUARES = 72
+
+/** One square per competency in the subject.
+ *
+ *  Replaces a percentage bar, which was actively misleading: 2 of 15 drew a
+ *  near-empty bar that read as failure, when it is simply what eleven cases look
+ *  like against a full curriculum. Squares show the same ratio without implying
+ *  a target, and they make the *scale* visible — that Orthopaedics carries 23
+ *  competencies and Pathology one is the thing a ratio hides completely.
+ */
+function Squares({ row }: { row: DashboardData['coverage'][number] }) {
+  if (row.total === 0) {
+    return <p className="coverage-note">No competencies set up for this subject yet.</p>
+  }
+
+  // Retired competencies still show in the list beneath — the cases happened —
+  // but they are no longer part of the curriculum, so they get no square.
+  const live = row.competencies.filter((c) => !c.retired).slice(0, MAX_SQUARES)
+  const empty = Math.max(Math.min(row.total, MAX_SQUARES) - live.length, 0)
+  const hidden = Math.max(row.total - MAX_SQUARES, 0)
+
+  return (
+    <>
+      <div className="squares" role="img" aria-label={`${row.covered} of ${row.total} competencies have evidence`}>
+        {live.map((item) => (
+          <span
+            key={item.id}
+            className={`square ${depth(item.logged)}`}
+            title={`${item.title} — ${item.logged} case${item.logged === 1 ? '' : 's'}`}
+          />
+        ))}
+        {Array.from({ length: empty }, (_, i) => (
+          <span key={`empty-${i}`} className="square" />
+        ))}
+      </div>
+      {hidden > 0 && <p className="coverage-note">+{hidden} more with no evidence</p>}
+      {/* A single competency is the seed, not a curriculum. Said briefly because
+          it repeats on every subject the professor has not loaded yet. */}
+      {row.total === 1 && <p className="coverage-note">Curriculum not loaded yet</p>}
+    </>
+  )
+}
+
 function Panel({
   eyebrow,
   title,
@@ -74,6 +128,7 @@ export function Dashboard() {
   const navigate = useNavigate()
   const [data, setData] = useState<DashboardData | null>(null)
   const [resident, setResident] = useState<string | null>(null)
+  const [openSubject, setOpenSubject] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -97,6 +152,7 @@ export function Dashboard() {
   const subjectsStarted = data.coverage.filter((row) => row.covered > 0).length
   const who = data.residents.find((r) => r.id === resident)
   const empty = data.totals.cases === 0
+  const openRow = data.coverage.find((row) => row.subject === openSubject) ?? null
 
   return (
     <>
@@ -133,9 +189,7 @@ export function Dashboard() {
 
       {empty ? (
         <div className="card stage-empty">
-          <p>
-            {who ? `${who.name} has not logged any cases yet.` : 'No cases logged yet.'}
-          </p>
+          <p>{who ? `${who.name} has not logged any cases yet.` : 'No cases logged yet.'}</p>
         </div>
       ) : (
         <>
@@ -169,48 +223,49 @@ export function Dashboard() {
             <Panel
               eyebrow="Coverage"
               title="Competencies with evidence"
-              note="What an examiner would find logged, subject by subject."
+              note="One square per competency in the curriculum. Filled squares have logged
+                    cases; the shade is how many."
             >
               <ul className="coverage">
                 {data.coverage.map((row) => (
                   <li key={row.subject} className={row.covered ? '' : 'is-gap'}>
-                    <div className="coverage-head">
-                      <span className="coverage-subject">
-                        <span className="coverage-mark" aria-hidden>
-                          {row.covered ? (
-                            <CheckIcon width={12} height={12} />
-                          ) : (
-                            <AlertIcon width={12} height={12} />
-                          )}
+                    {/* The whole row opens the detail — the squares are a summary,
+                        and the names live in the dialog where there is room. */}
+                    <button
+                      type="button"
+                      className="coverage-open"
+                      onClick={() => setOpenSubject(row.subject)}
+                      aria-label={`${row.subject} — ${row.covered} of ${row.total} competencies with evidence. Open the full list.`}
+                    >
+                      <span className="coverage-head">
+                        <span className="coverage-subject">
+                          <span className="coverage-mark" aria-hidden>
+                            {row.covered ? (
+                              <CheckIcon width={12} height={12} />
+                            ) : (
+                              <AlertIcon width={12} height={12} />
+                            )}
+                          </span>
+                          <strong>{row.subject}</strong>
                         </span>
-                        <strong>{row.subject}</strong>
+                        <span className="coverage-count">
+                          {row.total === 0 ? 'none set up' : `${row.covered} of ${row.total}`}
+                        </span>
                       </span>
-                      <span className="coverage-count">
-                        {row.total === 0
-                          ? 'none set up'
-                          : `${row.covered} of ${row.total}`}
-                      </span>
-                    </div>
-                    {row.total > 0 && <Meter value={row.percentage} />}
-                    {row.competencies.length > 0 && (
-                      <ul className="coverage-items">
-                        {row.competencies.map((item) => (
-                          <li key={item.id} className={item.retired ? 'is-retired' : ''}>
-                            <span>
-                              {item.title}
-                              {/* Removed from the catalogue since — the cases still happened. */}
-                              {item.retired && <small> · no longer in the catalogue</small>}
-                            </span>
-                            <em>
-                              {item.logged} case{item.logged === 1 ? '' : 's'}
-                            </em>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+
+                      <Squares row={row} />
+                    </button>
                   </li>
                 ))}
               </ul>
+
+              <p className="coverage-key">
+                <span className="square is-solid" aria-hidden /> 5+ cases
+                <span className="square is-mid" aria-hidden /> 3–4
+                <span className="square is-thin" aria-hidden /> 1–2
+                <span className="square" aria-hidden /> none yet
+                <span className="coverage-key-hint">Select a subject for the full list</span>
+              </p>
             </Panel>
 
             <Panel
@@ -283,7 +338,9 @@ export function Dashboard() {
             <header className="dash-log-head">
               <div>
                 <span className="eyebrow">Recent</span>
-                <h2>Latest {data.recent.length} of {data.totals.cases} cases</h2>
+                <h2>
+                  Latest {data.recent.length} of {data.totals.cases} cases
+                </h2>
               </div>
               <button type="button" className="btn btn-quiet" onClick={() => navigate('/cases')}>
                 View the full log
@@ -339,6 +396,8 @@ export function Dashboard() {
           </section>
         </>
       )}
+
+      {openRow && <CoverageDialog row={openRow} onClose={() => setOpenSubject(null)} />}
     </>
   )
 }

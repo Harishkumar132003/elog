@@ -6,7 +6,7 @@
    ───────────────────────────────────────────────────────────────────────── */
 
 .entry {
-  max-width: 680px;
+  max-width: 780px;
   margin: 0 auto;
 }
 
@@ -17,7 +17,7 @@
 .entry-title {
   margin-top: 6px;
   font-family: var(--display);
-  font-size: 28px;
+  font-size: 34px;
   font-weight: 600;
   letter-spacing: -0.022em;
   line-height: 1.15;
@@ -26,7 +26,7 @@
 .entry-lede {
   margin-top: 8px;
   max-width: 58ch;
-  font-size: 13.5px;
+  font-size: 14.5px;
   line-height: 1.6;
   color: var(--ink-2);
 }
@@ -48,14 +48,14 @@
 .field-label {
   display: block;
   margin-bottom: 10px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 620;
   letter-spacing: -0.008em;
   color: var(--ink);
 }
 
 .field-help {
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.5;
   color: var(--ink-3);
 }
@@ -82,7 +82,7 @@
   border: 1px solid var(--line-firm);
   background: var(--surface);
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 550;
   transition: background 0.15s var(--ease), border-color 0.15s var(--ease),
     color 0.15s var(--ease);
@@ -96,7 +96,7 @@
 .segment.is-on {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 /* role segments carry a hint line, so they are taller */
@@ -111,12 +111,12 @@
 }
 
 .segment-role strong {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 620;
 }
 
 .segment-role small {
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--ink-3);
 }
 
@@ -142,7 +142,7 @@
   background: var(--surface-sunk);
   resize: vertical;
   outline: none;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.65;
   transition: border-color 0.16s var(--ease), box-shadow 0.16s var(--ease),
     background 0.16s var(--ease);
@@ -151,7 +151,7 @@
 .textbox:focus {
   background: var(--surface);
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  box-shadow: var(--glow);
 }
 
 .textbox::placeholder {
@@ -168,7 +168,7 @@
 
 .field-count {
   flex: 0 0 auto;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--ink-3);
   font-variant-numeric: tabular-nums;
 }
@@ -187,14 +187,14 @@
 }
 
 .entry-hint {
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: var(--ink-3);
 }
 
 .btn-lg {
   height: 44px;
   padding: 0 22px;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .entry-error {
@@ -204,7 +204,7 @@
   border: 1px solid var(--alert-line);
   background: var(--alert-soft);
   color: var(--alert);
-  font-size: 12.5px;
+  font-size: 13.5px;
 }
 
 /* ── step 2 · review ───────────────────────────────────────────────────── */
@@ -215,14 +215,14 @@
 .review-competency {
   padding: 22px 26px 24px;
   border-bottom: 1px solid var(--line);
-  background: linear-gradient(160deg, #f7f8ff, var(--accent-soft));
+  background: linear-gradient(160deg, #ffffff, var(--accent-soft));
 }
 
 .review-badge {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 650;
   letter-spacing: 0.13em;
   text-transform: uppercase;
@@ -231,7 +231,7 @@
 
 .review-competency h2 {
   margin-top: 10px;
-  font-size: 21px;
+  font-size: 24px;
   font-weight: 600;
   line-height: 1.3;
   letter-spacing: -0.018em;
@@ -244,7 +244,7 @@
   height: 44px;
   margin-top: 10px;
   font-family: var(--display);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 550;
   background-color: rgba(255, 255, 255, 0.72);
   border-color: var(--accent-line);
@@ -256,7 +256,7 @@
 
 .review-competency-hint {
   margin-top: 8px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.5;
   color: var(--accent-deep);
   opacity: 0.85;
@@ -272,7 +272,7 @@
   background: var(--alert-soft);
   border: 1px solid var(--alert-line);
   color: var(--alert);
-  font-size: 12.5px;
+  font-size: 13.5px;
 }
 
 .review-fields-head {
@@ -301,7 +301,7 @@
 
 .review-fields dt {
   flex: 0 0 116px;
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 650;
   letter-spacing: 0.13em;
   text-transform: uppercase;
@@ -310,7 +310,7 @@
 
 .review-fields dd {
   margin: 0;
-  font-size: 14.5px;
+  font-size: 15.5px;
   font-weight: 600;
   letter-spacing: -0.012em;
   overflow-wrap: anywhere;
@@ -340,7 +340,7 @@
 
 .edit-row > span {
   flex: 0 0 116px;
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 650;
   letter-spacing: 0.13em;
   text-transform: uppercase;
@@ -356,7 +356,7 @@
   border: 1px solid var(--line-firm);
   border-radius: var(--r-sm);
   background: var(--surface);
-  font-size: 14px;
+  font-size: 15px;
   outline: none;
   transition: border-color 0.16s var(--ease), box-shadow 0.16s var(--ease);
 }
@@ -364,7 +364,7 @@
 .edit-row input:focus,
 .edit-row select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  box-shadow: var(--glow);
 }
 
 .edit-pair {
@@ -380,7 +380,7 @@
 
 .edit-note {
   margin-top: 14px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.5;
   color: var(--ink-3);
 }
@@ -392,7 +392,7 @@
 }
 
 .review-gaps p {
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.55;
   color: var(--warm-deep);
   max-width: 60ch;
@@ -415,7 +415,7 @@
   border: 1px solid var(--warm-line);
   background: var(--surface);
   color: var(--warm-deep);
-  font-size: 11.5px;
+  font-size: 12.5px;
 }
 
 @media (max-width: 620px) {

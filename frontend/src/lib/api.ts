@@ -25,6 +25,24 @@ interface Options extends Omit<RequestInit, 'body'> {
   body?: unknown
 }
 
+/** Where the backend lives.
+ *
+ *  Unset (the default in `npm run dev`) leaves requests relative, so they go to
+ *  the Vite dev server and its proxy forwards them — same origin, no CORS in the
+ *  way. Set it to a backend origin such as `http://localhost:7200` and the
+ *  browser calls the API directly, which is what a built container needs since
+ *  there is no dev server left to proxy through.
+ *
+ *  Vite inlines this at BUILD time, not at run time: a container has to be built
+ *  with the value it will use.
+ */
+const API_BASE = (import.meta.env.VITE_API_URL ?? '')
+  .trim()
+  // Tolerate both `http://host:7200` and `http://host:7200/` or `.../api`, so a
+  // trailing slash in an .env file is not a silent 404.
+  .replace(/\/+$/, '')
+  .replace(/\/api$/, '')
+
 export async function api<T>(path: string, options: Options = {}): Promise<T> {
   const { body, headers, ...rest } = options
   const token = getToken()
@@ -34,7 +52,7 @@ export async function api<T>(path: string, options: Options = {}): Promise<T> {
   // would produce "[object FormData]".
   const isForm = body instanceof FormData
 
-  const response = await fetch(`/api${path}`, {
+  const response = await fetch(`${API_BASE}/api${path}`, {
     ...rest,
     headers: {
       ...(body !== undefined && !isForm ? { 'Content-Type': 'application/json' } : {}),

@@ -16,17 +16,22 @@ e-log/
 ## Run it
 
 ```bash
-# 1. API
+# 1. API  — port 7200
 cd backend
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python -m scripts.seed          # demo accounts, idempotent
-.venv/bin/uvicorn app.main:app --reload   # http://localhost:8000/docs
+.venv/bin/uvicorn app.main:app --reload --port 7200   # http://localhost:7200/docs
 
-# 2. UI  (proxies /api to :8000)
+# 2. UI  — port 7205
 cd frontend
 npm install
-npm run dev                               # http://localhost:5173
+cp .env.example .env                      # VITE_API_URL -> http://localhost:7200
+npm run dev                               # http://localhost:7205
 ```
+
+`VITE_API_URL` points the browser at the API and is baked in at build time, so a
+change needs a dev-server restart or a rebuild. Leave it empty to route through
+the Vite proxy instead, which keeps requests same-origin and skips CORS.
 
 | Role | Email | Password |
 | --- | --- | --- |

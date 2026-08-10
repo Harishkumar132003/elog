@@ -1,68 +1,92 @@
 /* ─────────────────────────────────────────────────────────────────────────
    OpBook360 — design tokens
 
-   Cool neutral surfaces, a deep navy rail, and three accents that carry
-   meaning rather than decoration:
+   Black, white and one electric blue. The palette is deliberately narrow:
 
-     accent (indigo) — the system's own reasoning: competency, questions, marks
-     warm   (amber)  — what a human asserted: the role claimed, the axes certified
-     alert  (rose)   — the Critical item, and only ever the Critical item
+     blue  #2563eb — borders, highlights, active states, meters, the brand mark
+     ink   #191919 — headings and body type
+     black #000    — buttons and every dark surface
+     white #ffffff — cards and bright surfaces
+     grey  #f2f2f2 — the page behind the cards
+
+   Two rules keep it readable:
+
+   1. The accent is dark enough to be type as well as a surface — 5.2:1 on
+      white — so it carries emphasis in headings and labels, not just fills and
+      borders. Anything printed ON a filled accent uses --on-accent.
+   2. Status still needs to be told apart at a glance. A "Critical failure"
+      that reads like a pass is the one failure this app cannot have, so pass /
+      borderline / critical keep distinct hues, all of them well clear of the
+      accent blue.
 
    Colours are referenced by role, never by hue, so the theme can move without
    touching a single component.
    ───────────────────────────────────────────────────────────────────────── */
 :root {
-  /* surfaces */
-  --paper: #f5f6f9;
-  --paper-deep: #e9ecf2;
+  /* surfaces. The rail is a light surface too — the whole app is one bright
+     plane, with the page a shade cooler than the cards sitting on it. */
+  --paper: #f7f8fa;
+  --paper-deep: #eceef2;
   --surface: #ffffff;
-  --surface-sunk: #f8fafc;
-  --rail: #0e1526;
-  --rail-raised: #1b2438;
+  --surface-sunk: #f7f8fa;
+  --rail: #ffffff;
+  --rail-raised: #f2f4f7;
 
   /* rules */
-  --line: #e7eaf0;
-  --line-firm: #d3d8e2;
+  --line: #eaecf0;
+  --line-firm: #d8dce3;
 
-  /* text */
-  --ink: #0f172a;
-  --ink-2: #4b566b;
-  --ink-3: #8a94a8;
-  --ink-rail: #97a1b7;
-  --ink-rail-hi: #f2f5fa;
+  /* text. Mid-greys are derived: the brand palette has none, and without them
+     labels and hints would sit at the same weight as the headings. */
+  --ink: #191919;
+  --ink-2: #1c1c1c;
+  /* 4.6:1 on the grey page background — one step darker than it looks like it
+     needs, because most muted text sits on --paper rather than on white. */
+  --ink-3: #6b7280;
+  --ink-rail: #5a6473;
+  --ink-rail-hi: #101828;
 
-  /* accent — the system's reasoning */
-  --accent: #4f46e5;
-  --accent-deep: #4338ca;
-  --accent-lift: #6366f1;
-  --accent-soft: #eef0ff;
-  --accent-line: #ccd0fb;
+  /* accent — the brand, and the system's own reasoning */
+  --accent: #2563eb;
+  --accent-deep: #1d4ed8; /* the accent as *type* — 6.3:1 on white */
+  --accent-lift: #3b82f6;
+  --accent-soft: #eef2ff;
+  --accent-line: #cddcfc;
+  --on-accent: #ffffff; /* anything printed on a filled accent */
+
+  /* solid dark controls */
+  --btn: #000000;
+  --btn-lift: #1c1c1c;
+  --on-btn: #ffffff;
 
   /* warm — what a human asserted */
-  --warm: #b8730c;
-  --warm-deep: #8c570a;
-  --warm-soft: #fdf7ea;
-  --warm-line: #f0ddb6;
+  --warm: #8a5a00;
+  --warm-deep: #6d4700;
+  --warm-soft: #fdf6e8;
+  --warm-line: #ecdcb4;
 
-  /* ok — a pass, a correct answer, a cleared Critical item */
-  --ok: #0f7a5a;
-  --ok-soft: #edf8f3;
-  --ok-line: #bfe4d5;
+  /* ok — a pass, a correct answer, a cleared Critical item. A true green now
+     that the accent is blue: the two are never mistaken for each other. */
+  --ok: #0f7a43;
+  --ok-soft: #e9f8ef;
+  --ok-line: #b4e2c7;
 
   /* alert — the Critical / fatal-error item only */
-  --alert: #d92d3f;
-  --alert-soft: #fef2f3;
-  --alert-line: #f8ccd1;
+  --alert: #cf0a2c;
+  --alert-soft: #fdeef1;
+  --alert-line: #f6c7d0;
 
   /* shape */
-  --r-xs: 6px;
-  --r-sm: 9px;
-  --r-md: 12px;
-  --r-lg: 16px;
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
-  --shadow-sm: 0 2px 8px -2px rgba(15, 23, 42, 0.1);
-  --shadow-md: 0 12px 26px -12px rgba(15, 23, 42, 0.24);
-  --shadow-lg: 0 26px 50px -22px rgba(15, 23, 42, 0.32);
+  --r-xs: 7px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 18px;
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 2px 8px -2px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 12px 26px -12px rgba(0, 0, 0, 0.22);
+  --shadow-lg: 0 26px 50px -22px rgba(0, 0, 0, 0.3);
+  /* the accent ring, used for focus and for a live highlight */
+  --glow: 0 0 0 3px rgba(37, 99, 235, 0.28);
 
   /* type — one modern sans; hierarchy comes from size, weight and tracking */
   --sans: 'Inter var', Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont,
@@ -70,6 +94,18 @@
   --display: var(--sans);
   --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
 
-  --rail-w: 244px;
+  /* type scale — a wider shell can carry more size, so the whole ramp moves up
+     together rather than each file picking its own px value */
+  --t-micro: 11px;
+  --t-tiny: 12.5px;
+  --t-small: 13.5px;
+  --t-body: 15px;
+  --t-read: 16.5px;
+  --t-h3: 17px;
+  --t-h2: 21px;
+  --t-h1: 34px;
+
+  --rail-w: 272px;
+  --shell-w: 1280px;
   --ease: cubic-bezier(0.32, 0.72, 0, 1);
 }

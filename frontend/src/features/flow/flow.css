@@ -2,7 +2,7 @@
   padding: 60px 0;
   text-align: center;
   color: var(--ink-3);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .flow-back {
@@ -27,7 +27,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--ink-3);
   position: relative;
 }
@@ -83,24 +83,27 @@
 
 .analysis-cell p {
   margin-top: 5px;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 600;
   letter-spacing: -0.012em;
 }
 
 .analysis-competency p {
-  font-size: 19px;
+  font-size: 22px;
   font-weight: 600;
   letter-spacing: -0.018em;
   line-height: 1.3;
   color: var(--accent-deep);
 }
 
+/* A wider shell must not mean wider paragraphs — long prose is capped at a
+   comfortable measure rather than running the full 1280px. */
 .analysis-narrative {
   margin: 20px 0 0;
   padding-left: 16px;
   border-left: 2px solid var(--warm-line);
   color: var(--ink-2);
+  max-width: 86ch;
 }
 
 .analysis-gaps {
@@ -126,7 +129,7 @@
   border: 1px solid var(--warm-line);
   background: var(--warm-soft);
   color: var(--warm-deep);
-  font-size: 11.5px;
+  font-size: 12.5px;
 }
 
 /* ── shared panel chrome ───────────────────────────────────────────────── */
@@ -143,7 +146,7 @@
 
 .certify-lede {
   padding: 18px 26px 4px;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
   color: var(--ink-2);
   max-width: 68ch;
@@ -167,7 +170,7 @@
 }
 
 .suggest-prompt span {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--ink-3);
 }
 
@@ -176,7 +179,7 @@
   padding: 14px 16px 16px;
   border: 1px solid var(--accent-line);
   border-radius: var(--r-md);
-  background: linear-gradient(160deg, #f7f8ff, var(--accent-soft));
+  background: linear-gradient(160deg, #ffffff, var(--accent-soft));
 }
 
 .suggested-head {
@@ -196,7 +199,7 @@
 }
 
 .suggested-note {
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--ink-3);
 }
 
@@ -214,7 +217,7 @@
   border: 1px solid var(--alert-line);
   background: var(--alert-soft);
   color: var(--alert);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -234,7 +237,7 @@
 }
 
 .family-head h3 {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 650;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -243,7 +246,7 @@
 
 .family-head p {
   margin-top: 2px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--ink-3);
 }
 
@@ -293,19 +296,19 @@
 
 .axis-text strong {
   display: block;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 
 .axis-text small {
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--ink-3);
 }
 
 .axis-verdict {
   margin-left: auto;
   flex: 0 0 auto;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-3);
@@ -336,7 +339,7 @@
 }
 
 .axis-field span {
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 650;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -349,13 +352,13 @@
   border: 1px solid var(--line-firm);
   border-radius: var(--r-xs);
   background: var(--surface);
-  font-size: 12.5px;
+  font-size: 13.5px;
   outline: none;
 }
 
 .axis-field input:focus {
   border-color: var(--warm);
-  box-shadow: 0 0 0 3px rgba(184, 115, 12, 0.14);
+  box-shadow: 0 0 0 3px rgba(138, 90, 0, 0.14);
 }
 
 .axis-critical {
@@ -366,7 +369,7 @@
   padding: 0 12px;
   border-radius: var(--r-xs);
   border: 1px dashed var(--line-firm);
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--ink-3);
   transition: all 0.16s var(--ease);
 }
@@ -424,8 +427,8 @@
   height: 22px;
   border-radius: 50%;
   background: var(--accent);
-  color: #fff;
-  font-size: 11px;
+  color: var(--on-accent);
+  font-size: 11.5px;
   font-weight: 650;
 }
 
@@ -442,13 +445,14 @@
 
 .question-prompt {
   color: var(--ink);
+  max-width: 86ch;
 }
 
 /* ── professor editing the draft ───────────────────────────────────────── */
 .question-drop {
   margin-left: auto;
   flex: 0 0 auto;
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--ink-3);
   padding: 3px 8px;
   border-radius: var(--r-xs);
@@ -474,7 +478,7 @@
 
 .question-edit:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  box-shadow: var(--glow);
 }
 
 .question-meta {
@@ -492,7 +496,7 @@
 }
 
 .question-meta span {
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 650;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -506,14 +510,14 @@
   border: 1px solid var(--line-firm);
   border-radius: var(--r-xs);
   background: var(--surface);
-  font-size: 12.5px;
+  font-size: 13.5px;
   outline: none;
 }
 
 .question-meta select:focus,
 .question-meta input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  box-shadow: var(--glow);
 }
 
 .question-marks input {
@@ -538,7 +542,7 @@
 
 .answer-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  box-shadow: var(--glow);
 }
 
 .answer-input::placeholder {
@@ -550,7 +554,7 @@
   display: flex;
   justify-content: flex-end;
   margin-top: 6px;
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--ink-3);
 }
 
@@ -595,7 +599,7 @@
 
 .result-score small {
   margin-top: 5px;
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--ink-2);
   font-variant-numeric: tabular-nums;
 }
@@ -607,14 +611,14 @@
 .result-verdict h2 {
   margin-top: 4px;
   font-family: var(--display);
-  font-size: 21px;
+  font-size: 24px;
   font-weight: 600;
   letter-spacing: -0.018em;
 }
 
 .result-verdict p {
   margin-top: 5px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.5;
   color: var(--ink-2);
   max-width: 52ch;
@@ -628,7 +632,7 @@
   flex: 0 0 auto;
   padding: 7px 13px;
   border-radius: 999px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 650;
 }
 
@@ -652,7 +656,7 @@
 
 .result-rollup p {
   font-family: var(--display);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   letter-spacing: -0.014em;
 }
@@ -660,7 +664,7 @@
 .result-marks {
   margin-left: auto;
   flex: 0 0 auto;
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 650;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
@@ -668,7 +672,7 @@
 
 .result-marks em {
   font-style: normal;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--ink-3);
 }
@@ -684,20 +688,22 @@
 }
 
 .result-answer p {
+  max-width: 86ch;
   margin-top: 6px;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
   color: var(--ink);
   white-space: pre-wrap;
 }
 
 .result-feedback {
+  max-width: 86ch;
   margin-top: 12px;
   padding: 11px 13px;
   border-left: 2px solid var(--ok-line);
   background: var(--surface);
   border-radius: 0 var(--r-xs) var(--r-xs) 0;
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.55;
   color: var(--ink-2);
 }
@@ -713,7 +719,7 @@
   margin-top: 13px;
   padding-top: 11px;
   border-top: 1px solid var(--line);
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-3);
@@ -724,12 +730,12 @@
   font-weight: 650;
   letter-spacing: 0;
   text-transform: none;
-  font-size: 11.5px;
+  font-size: 12.5px;
 }
 
 .result-note {
   padding: 4px 26px 20px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--warm-deep);
 }
 
@@ -753,7 +759,7 @@
 .waiting p {
   max-width: 46ch;
   margin: 8px auto 0;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
   color: var(--ink-2);
 }

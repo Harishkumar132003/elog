@@ -31,6 +31,11 @@ router = APIRouter(prefix="/professor", tags=["dashboard"])
 
 RECENT_CASES = 5
 
+# Titles of unlogged competencies travel with the response so the coverage
+# popup can name them. Bounded so a 300-competency curriculum cannot bloat the
+# dashboard payload; the ratio beside it always states the true total.
+MAX_GAPS = 60
+
 
 def _entry_facets() -> dict[str, Any]:
     return {
@@ -183,6 +188,15 @@ async def get_dashboard(
         ]
         evidenced.sort(key=lambda c: (c["retired"], -c["logged"]))
 
+        # What is still unlogged. Too long to sit on the dashboard, but it is the
+        # actionable half of coverage — "what should this resident log next" — so
+        # it travels with the response and the panel reveals it on demand.
+        gaps = [
+            {"id": item["id"], "title": item["title"]}
+            for item in items
+            if not logged.get(item["id"])
+        ][:MAX_GAPS]
+
         covered = sum(1 for c in evidenced if not c["retired"])
         coverage.append(
             {
@@ -191,6 +205,7 @@ async def get_dashboard(
                 "covered": covered,
                 "percentage": round(100 * covered / len(items)) if items else 0,
                 "competencies": evidenced,
+                "gaps": gaps,
             }
         )
 

@@ -49,9 +49,12 @@ class Settings(BaseSettings):
         return f"https://api.{self.corti_environment}.corti.app/v2"
 
     # --- CORS / paging ---------------------------------------------------
+    # The browser origins allowed to call this API. Only needed when the
+    # frontend talks to the backend directly (VITE_API_URL set); through the
+    # Vite proxy everything is same-origin and never reaches this check.
     cors_origins: tuple[str, ...] = (
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
+        "http://localhost:7205",
+        "http://127.0.0.1:7205",
     )
     max_narrative_chars: int = 4000
     default_page_size: int = 25

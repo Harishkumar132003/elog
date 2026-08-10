@@ -16,7 +16,7 @@
 }
 
 .dash-filter label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 650;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -29,7 +29,7 @@
 }
 
 .dash-filter-busy {
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--ink-3);
 }
 
@@ -51,7 +51,7 @@
 
 .tile strong {
   display: block;
-  font-size: 28px;
+  font-size: 34px;
   font-weight: 650;
   letter-spacing: -0.03em;
   line-height: 1.05;
@@ -61,7 +61,7 @@
 .tile span {
   display: block;
   margin-top: 5px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.4;
   color: var(--ink-3);
 }
@@ -83,10 +83,12 @@
 }
 
 /* ── panels ────────────────────────────────────────────────────────────── */
+/* The wider shell fits three 330px columns, which left the third empty next to
+   the two panels. Two roomier columns fill the row instead. */
 .dash-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(430px, 1fr));
+  gap: 16px;
   margin-bottom: 16px;
 }
 
@@ -105,14 +107,14 @@
 
 .dash-panel h2 {
   margin-top: 4px;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 620;
   letter-spacing: -0.014em;
 }
 
 .dash-panel > header p {
   margin-top: 4px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.5;
   color: var(--ink-3);
   max-width: 46ch;
@@ -120,7 +122,7 @@
 
 .dash-empty {
   padding: 8px 0 4px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: var(--ink-3);
 }
 
@@ -143,7 +145,7 @@
   align-items: center;
   gap: 9px;
   min-width: 0;
-  font-size: 12.5px;
+  font-size: 13.5px;
 }
 
 .coverage-subject strong {
@@ -174,7 +176,7 @@
 .coverage-count {
   margin-left: auto;
   flex: 0 0 auto;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--ink-2);
   font-variant-numeric: tabular-nums;
@@ -185,9 +187,110 @@
   color: var(--warm-deep);
 }
 
-/* The competencies actually logged, indented under their subject's meter. */
+/* The whole subject row is the control that opens its detail. */
+.coverage-open {
+  display: block;
+  width: 100%;
+  padding: 8px 10px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: none;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  transition: background 0.14s var(--ease), border-color 0.14s var(--ease);
+}
+
+.coverage-open:hover {
+  background: var(--surface-sunk);
+  border-color: var(--line);
+}
+
+.coverage-open .coverage-head,
+.coverage-open .squares,
+.coverage-open .coverage-note {
+  margin-left: 0;
+}
+
+.coverage-open .squares {
+  margin-top: 9px;
+  padding-left: 29px;
+}
+
+.coverage-open .coverage-note {
+  padding-left: 29px;
+}
+
+.coverage-key-hint {
+  margin-left: auto;
+  color: var(--ink-3);
+}
+
+/* ── the squares ───────────────────────────────────────────────────────── */
+/* One square per competency, replacing a percentage bar that made ordinary
+   progress look like failure. The grid carries the ratio AND the scale: that
+   Orthopaedics holds 23 competencies and Pathology one is invisible in a
+   percentage and obvious here. Depth of shade is a bonus reading — the case
+   count is printed against every covered competency underneath, so nothing
+   depends on telling two blues apart. */
+.squares {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin: 9px 0 0 29px;
+}
+
+.square {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+  border-radius: 3px;
+  background: var(--paper-deep);
+}
+
+/* A three-step sequential ramp in the accent hue. The lightest step is pulled
+   well clear of the empty grey — at --accent-line the two were nearly the same
+   square, so "logged once" and "never logged" looked alike. */
+.square.is-thin {
+  background: #93b4fc;
+}
+.square.is-mid {
+  background: var(--accent-lift);
+}
+.square.is-solid {
+  background: var(--accent-deep);
+}
+
+.coverage-note {
+  margin: 7px 0 0 29px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+/* The key sits once at the foot of the panel, not against every subject. */
+.coverage-key {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 13px;
+  border-top: 1px solid var(--line);
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.coverage-key .square {
+  margin-left: 7px;
+}
+
+.coverage-key .square:first-child {
+  margin-left: 0;
+}
+
+/* The competencies actually logged, indented under their subject's grid. */
 .coverage-items {
-  margin: 8px 0 0 29px;
+  margin: 10px 0 0 29px;
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -196,9 +299,9 @@
 .coverage-items li {
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  gap: 10px;
   padding: 3px 0;
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--ink-2);
   line-height: 1.45;
 }
@@ -212,18 +315,24 @@
 }
 
 .coverage-items li.is-retired small {
-  font-size: 10px;
+  font-size: 11px;
   font-style: italic;
 }
 
+/* The case count leads the row: it is the measure of how strong the evidence
+   is, and reading it first makes 5 and 1 impossible to confuse. */
 .coverage-items li em {
-  margin-left: auto;
-  flex: 0 0 auto;
+  flex: 0 0 22px;
   font-style: normal;
-  font-size: 10.5px;
-  color: var(--ink-3);
+  font-size: 12.5px;
+  font-weight: 680;
+  color: var(--accent-deep);
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+  text-align: right;
+}
+
+.coverage-items li.is-retired em {
+  color: var(--ink-3);
 }
 
 /* ── magnitude bars ────────────────────────────────────────────────────── */
@@ -249,19 +358,19 @@
 }
 
 .bar-label strong {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 570;
 }
 
 .bar-label small {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--ink-3);
 }
 
 /* Values wear ink, never the series colour. */
 .bar-value {
   flex: 0 0 auto;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 650;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
@@ -271,7 +380,7 @@
 .bar-value em {
   margin-left: 7px;
   font-style: normal;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--ink-3);
 }
@@ -292,7 +401,7 @@
   gap: 12px;
   padding: 7px 10px;
   border-radius: var(--r-sm);
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: var(--ink-2);
 }
 
@@ -308,7 +417,7 @@
 
 .levels-count {
   font-variant-numeric: tabular-nums;
-  font-size: 11.5px;
+  font-size: 12.5px;
 }
 
 .outcomes {
@@ -333,7 +442,7 @@
   border-radius: 999px;
   border: 1px solid var(--line-firm);
   background: var(--surface);
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--ink-2);
 }
 
@@ -379,7 +488,7 @@
 
 .dash-log-head h2 {
   margin-top: 3px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 620;
   letter-spacing: -0.012em;
 }
@@ -387,5 +496,165 @@
 @media (max-width: 720px) {
   .dash-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ── the coverage dialog ───────────────────────────────────────────────── */
+/* Two logged competencies fitted inline; a real curriculum has forty, and the
+   half worth reading is the part with no evidence yet. That never could have
+   sat on the dashboard, so it lives here and the panel keeps its shape. */
+.dialog-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 28px 20px;
+  background: rgba(16, 24, 40, 0.45);
+  animation: dialog-in 0.16s var(--ease);
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(680px, 100%);
+  max-height: min(720px, 88vh);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.dialog-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 20px 22px 17px;
+  border-bottom: 1px solid var(--line);
+}
+
+.dialog-head h2 {
+  margin-top: 4px;
+  font-size: var(--t-h2);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.dialog-head p {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.dialog-head .btn {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.dialog-body {
+  padding: 18px 22px 22px;
+  overflow-y: auto;
+}
+
+.dialog-group + .dialog-group {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.dialog-group h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.dialog-mark {
+  display: grid;
+  place-items: center;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+}
+
+.dialog-mark.is-ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+.dialog-mark.is-gap {
+  background: var(--warm-soft);
+  color: var(--warm);
+}
+
+.dialog-note {
+  margin-top: 7px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink-3);
+  max-width: 70ch;
+}
+
+.dialog-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: 10px;
+}
+
+.dialog-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 7px 9px;
+  border-radius: var(--r-xs);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.dialog-list li:nth-child(odd) {
+  background: var(--surface-sunk);
+}
+
+/* The case count leads, so strong and thin evidence never look alike. */
+.dialog-list em {
+  flex: 0 0 22px;
+  font-style: normal;
+  font-weight: 680;
+  font-size: 13.5px;
+  color: var(--accent-deep);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.dialog-list.is-retired em {
+  color: var(--ink-3);
+}
+
+/* Gaps are the actionable half but not a failure — quiet, not alarming. */
+.dialog-list.is-gaps li {
+  color: var(--ink-3);
+  padding-left: 21px;
+}
+
+@media (max-width: 620px) {
+  .dialog-scrim {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .dialog {
+    max-height: 92vh;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
   }
 }
