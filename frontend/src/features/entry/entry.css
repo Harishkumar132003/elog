@@ -444,3 +444,142 @@
     text-align: center;
   }
 }
+
+/* Shown while the streamed parse is still being refined by the AI. The screen
+   opens on the rule-based read, so this is what stops a provisional answer
+   being mistaken for a final one. */
+.review-pending {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 26px;
+  border-bottom: 1px solid var(--accent-line);
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  font-size: 12.5px;
+  font-weight: 550;
+}
+
+/* ── dictation ─────────────────────────────────────────────────────────── */
+/* The mic sits on the label row rather than in `.field-foot`, which is a
+   two-child space-between and would break with a third item. */
+.field-label-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.field-label-row .field-label {
+  margin-bottom: 0;
+}
+
+.dictate {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dictate-start {
+  height: 34px;
+}
+
+/* Recording is the one state that should be unmistakable, so it is the only
+   place in the form that wears the alert colour. */
+.dictate-stop {
+  height: 34px;
+  padding: 0 14px;
+  background: var(--alert);
+  color: #fff;
+  border-color: var(--alert);
+  font-size: var(--t-tiny);
+}
+
+.dictate-stop::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  animation: dictate-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes dictate-pulse {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.dictate-stop em {
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.dictate-working {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: var(--t-tiny);
+  color: var(--ink-3);
+}
+
+/* Progress is known — the clip's own length — so it is a real bar, not a spinner. */
+.dictate-bar {
+  display: block;
+  width: 54px;
+  height: 4px;
+  border-radius: 3px;
+  background: var(--paper-deep);
+  overflow: hidden;
+}
+
+.dictate-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+  transition: width 0.4s var(--ease);
+}
+
+.dictate-error {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--warm-deep);
+  text-align: left;
+}
+
+/* The words as they arrive. Deliberately not written into the case box until the
+   recording is finished — a half-sentence that keeps rewriting itself is
+   impossible to edit around. */
+.dictate-preview {
+  flex: 1 1 100%;
+  margin-top: 2px;
+  padding: 9px 12px;
+  border-radius: var(--r-sm);
+  border: 1px dashed var(--accent-line);
+  background: var(--accent-soft);
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  text-align: left;
+}
+
+@media (max-width: 620px) {
+  .field-label-row {
+    flex-wrap: wrap;
+  }
+
+  .dictate {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

@@ -19,8 +19,10 @@ e-log/
 # 1. API  — port 7200
 cd backend
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+echo 'export UVICORN_PORT=7200' >> .venv/bin/activate   # so --port is never needed
 .venv/bin/python -m scripts.seed          # demo accounts, idempotent
-.venv/bin/uvicorn app.main:app --reload --port 7200   # http://localhost:7200/docs
+source .venv/bin/activate
+uvicorn app.main:app --reload             # http://localhost:7200/docs
 
 # 2. UI  — port 7205
 cd frontend

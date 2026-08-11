@@ -1,12 +1,16 @@
+import asyncio
+import logging
+import time
+from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from typing import Any
 
-import logging
-
 from bson import ObjectId
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
 
 from app.api.deps import CurrentResident, CurrentUser, entry_filter_for, to_object_id
+from app.api.sse import HEARTBEAT_SECONDS, STREAM_HEADERS, sse
 from app.core.config import get_settings
 from app.core.constants import DopsRole, EntryStatus, role_labels
 from app.data.axes import subject_class
@@ -20,7 +24,7 @@ from app.schemas.entry import (
     ParseResponse,
 )
 from app.services import catalogue
-from app.services.ai import analyse_entry
+from app.services.ai import analyse_entry, baseline_for
 from app.services.axis_suggest import suggest_axes
 
 router = APIRouter(prefix="/entries", tags=["entries"])
@@ -59,8 +63,66 @@ def _with_role_label(document: dict[str, Any]) -> dict[str, Any]:
 
 @router.post("/parse", response_model=ParseResponse)
 async def parse(payload: ParseRequest, user: CurrentUser) -> dict[str, Any]:
-    """Live preview for the entry form. Nothing is persisted."""
+    """Live preview for the entry form. Nothing is persisted.
+
+    Kept as the non-streaming path: `/parse/stream` is an enhancement, and a
+    client that cannot read a stream still gets the same answer here.
+    """
     return await analyse_entry(payload.narrative, payload.subject.value)
+
+
+async def _parse_events(narrative: str, subject: str) -> AsyncIterator[bytes]:
+    """Rules first, then the AI answer, with a pulse in between.
+
+    The deterministic parse costs microseconds and already fills diagnosis,
+    procedure and patient — so it goes out immediately rather than being held
+    hostage to a Corti call that can take half a minute. The heartbeats matter
+    as much as the payload: a connection that never idles cannot be cut by an
+    intermediary that times out silent requests.
+    """
+    started = time.monotonic()
+    try:
+        yield sse("baseline", await baseline_for(narrative, subject))
+    except Exception:
+        logger.exception("Baseline parse failed")
+        yield sse("error", {"detail": "Could not read the entry"})
+        return
+
+    task = asyncio.create_task(analyse_entry(narrative, subject))
+    try:
+        while True:
+            done, _ = await asyncio.wait({task}, timeout=HEARTBEAT_SECONDS)
+            if done:
+                break
+            yield sse("status", {"elapsed": round(time.monotonic() - started, 1)})
+        # analyse_entry never raises — it degrades to the rule-based answer —
+        # so a failure here is genuinely unexpected and worth surfacing.
+        yield sse("result", task.result())
+    except asyncio.CancelledError:
+        # The resident navigated away or edited the text. Stop the AI work too.
+        task.cancel()
+        raise
+    except Exception:
+        logger.exception("Streamed parse failed")
+        yield sse("error", {"detail": "The AI could not be reached"})
+
+
+@router.post("/parse/stream")
+async def parse_stream(payload: ParseRequest, user: CurrentUser) -> StreamingResponse:
+    """The same analysis as `/parse`, delivered as it becomes available."""
+    return StreamingResponse(
+        _parse_events(payload.narrative, payload.subject.value),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            # nginx buffers proxied responses by default, which would hold every
+            # event back until the stream closed and make this pointless. This
+            # header disables it for this response alone, so no nginx config
+            # change is needed.
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 def _apply_corrections(parsed: dict[str, Any], payload: EntryCreate) -> bool:

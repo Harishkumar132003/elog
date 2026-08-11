@@ -150,6 +150,17 @@ def _cache_put(key: str, value: dict[str, Any]) -> None:
     _parse_cache[key] = (time.monotonic(), deepcopy(value))
 
 
+async def baseline_for(narrative: str, subject: str) -> dict[str, Any]:
+    """The deterministic answer alone, without waiting for Corti.
+
+    Costs microseconds, so the streaming endpoint can put diagnosis, procedure
+    and patient on screen immediately and let the AI refine them a few seconds
+    later. `analyse_entry` still computes its own — the parser is far cheaper
+    than the branch that would be needed to share one.
+    """
+    return await _baseline(narrative, subject)
+
+
 async def analyse_entry(narrative: str, subject: str) -> dict[str, Any]:
     """Parse an e-log entry and choose the competency it is evidence for."""
     result = await _baseline(narrative, subject)

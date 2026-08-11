@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { AiIcon, ArrowIcon, CheckIcon } from '../../components/icons'
-import { createEntry, getCompetencies, getSubjects, parseEntry } from '../../lib/entries'
+import { createEntry, getCompetencies, getSubjects, parseEntryStream } from '../../lib/entries'
+import { Dictation, canDictate } from './Dictation'
 import type { Analysis, Competency, DopsRole, Entry, Subject, SubjectMeta } from '../../types'
 import './entry.css'
 
 const MIN_CHARS = 20
+/** Mirrors `max_narrative_chars` on the server. */
+const MAX_NARRATIVE = 4000
 
 const PLACEHOLDER: Record<string, string> = {
   clinical:
@@ -23,6 +26,8 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
 
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [analysing, setAnalysing] = useState(false)
+  /** Seconds the AI has been working; shown once the wait is noticeable. */
+  const [waiting, setWaiting] = useState(0)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -85,27 +90,68 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
     if (!ready || analysing) return
     if (analysedFor.current === key && analysis) return // nothing changed
     setAnalysing(true)
+    setWaiting(0)
     setError(null)
-    try {
-      const result = await parseEntry(subject, trimmed)
-      analysedFor.current = key
+
+    // Only the fields the resident has not touched follow the parse. Once they
+    // have corrected something, the AI arriving late must not overwrite it.
+    const adopt = (result: Analysis, force: boolean) => {
       setAnalysis(result)
+      setFix((current) =>
+        force || !current
+          ? {
+              diagnosis: result.parsed.diagnosis?.display ?? '',
+              procedure: result.parsed.procedure?.display ?? '',
+              age: result.parsed.patient?.age ? String(result.parsed.patient.age) : '',
+              sex: result.parsed.patient?.sex ?? '',
+            }
+          : current,
+      )
+    }
+
+    try {
+      const result = await parseEntryStream(
+        subject,
+        trimmed,
+        {
+          // The rule-based read lands in a tenth of a second. Showing it at once
+          // beats a spinner: the resident starts checking real values while the
+          // AI is still working, and the refined answer replaces them in place.
+          onBaseline: (draft) => {
+            analysedFor.current = key
+            adopt(draft, true)
+            setEditing(false)
+          },
+          onWaiting: setWaiting,
+        },
+      )
+      analysedFor.current = key
+      adopt(result, true)
       // The AI's pick seeds the dropdown; with one competency there is nothing to
       // choose and the fallback picks it anyway.
       setCompetencyId(result.competency?.id ?? (competencies.length === 1 ? competencies[0].id : ''))
       setEditing(false)
-      setFix({
-        diagnosis: result.parsed.diagnosis?.display ?? '',
-        procedure: result.parsed.procedure?.display ?? '',
-        age: result.parsed.patient?.age ? String(result.parsed.patient.age) : '',
-        sex: result.parsed.patient?.sex ?? '',
-      })
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not read this entry')
     } finally {
       setAnalysing(false)
+      setWaiting(0)
     }
-  }, [ready, analysing, key, analysis, subject, trimmed])
+  }, [ready, analysing, key, analysis, subject, trimmed, competencies])
+
+  /** Dictation adds to the case, it does not take it over.
+   *  The resident may have typed first, and a recording is one more paragraph. */
+  const appendDictated = useCallback((text: string) => {
+    setNarrative((current) => {
+      const joined = current.trim() ? `${current.trimEnd()} ${text}` : text
+      // The server caps the narrative too, but stopping here means the resident
+      // sees the limit instead of silently losing the end of what they said.
+      return joined.length > MAX_NARRATIVE
+        ? joined.slice(0, MAX_NARRATIVE).trimEnd()
+        : joined
+    })
+    textarea.current?.focus()
+  }, [])
 
   const patch = useCallback(
     (part: Partial<NonNullable<typeof fix>>) =>
@@ -159,6 +205,17 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
         </header>
 
         <section className="card review">
+          {/* The rules read arrives in a tenth of a second and this screen opens on
+              it, so the resident must be told the AI has not finished — otherwise a
+              provisional parse looks like a final one. */}
+          {analysing && (
+            <p className="review-pending">
+              <AiIcon width={13} height={13} />
+              Still checking with AI{waiting >= 3 ? ` · ${Math.round(waiting)}s` : ''} — these
+              fields may still change.
+            </p>
+          )}
+
           <div className="review-competency">
             <span className="review-badge">
               <AiIcon width={13} height={13} />
@@ -316,11 +373,11 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
             className="btn btn-primary"
             // Without a competency the case has nothing to be evidence *of*, and
             // the whole exercise downstream is built from it.
-            disabled={saving || (competencies.length > 1 && !competencyId)}
+            disabled={saving || analysing || (competencies.length > 1 && !competencyId)}
             onClick={save}
           >
             <CheckIcon width={16} height={16} />
-            {saving ? 'Saving…' : 'Confirm & save to logbook'}
+            {saving ? 'Saving…' : analysing ? 'Waiting for the AI…' : 'Confirm & save to logbook'}
           </button>
         </div>
       </div>
@@ -383,11 +440,14 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
         </div>
 
         <div className="field-block">
-          <label className="field-label" htmlFor="narrative">
-            {meta?.subject_class === 'pre-clinical'
-              ? 'What did you study?'
-              : 'What did you do?'}
-          </label>
+          <div className="field-label-row">
+            <label className="field-label" htmlFor="narrative">
+              {meta?.subject_class === 'pre-clinical'
+                ? 'What did you study?'
+                : 'What did you do?'}
+            </label>
+            {canDictate() && <Dictation onText={appendDictated} disabled={analysing} />}
+          </div>
           <textarea
             id="narrative"
             ref={textarea}
@@ -425,7 +485,7 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
           disabled={!ready || analysing}
           onClick={analyse}
         >
-          {analysing ? 'Reading your entry…' : 'Analyse entry'}
+          {analysing ? (waiting >= 3 ? `Checking with AI… ${Math.round(waiting)}s` : 'Reading your entry…') : 'Analyse entry'}
           {!analysing && <ArrowIcon width={16} height={16} />}
         </button>
       </div>

@@ -18,6 +18,10 @@ bcrypt==4.2.1
 
 # Corti API
 httpx==0.28.1
+# Speech-to-text is a WebSocket, not REST. Present already via uvicorn[standard],
+# but pinned here because a transitive dependency is not a contract — the Docker
+# build installs strictly from this file.
+websockets==17.0.1
 
 # Competency import — pure python, so no system libraries to install (PyMuPDF needs them)
 pypdf==5.1.0

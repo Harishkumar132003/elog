@@ -1,4 +1,4 @@
-import { api } from './api'
+import { api, apiStream } from './api'
 import type {
   Analysis,
   Attempt,
@@ -58,6 +58,42 @@ export const forgetCompetencies = (subject?: Subject): void => {
 
 export const parseEntry = (subject: Subject, narrative: string, signal?: AbortSignal) =>
   api<Analysis>('/entries/parse', { method: 'POST', body: { subject, narrative }, signal })
+
+/** The same analysis, delivered in stages.
+ *
+ *  `onBaseline` fires almost immediately with the rule-based read — diagnosis,
+ *  procedure and patient are already filled in — so the form has something real
+ *  to show while Corti takes its seconds. The promise resolves with the AI's
+ *  refined answer.
+ *
+ *  Falls back to the plain request if the stream cannot be read or ends without
+ *  a result, so a proxy that buffers responses degrades to the old behaviour
+ *  rather than breaking the screen.
+ */
+export async function parseEntryStream(
+  subject: Subject,
+  narrative: string,
+  handlers: { onBaseline?: (analysis: Analysis) => void; onWaiting?: (seconds: number) => void },
+  signal?: AbortSignal,
+): Promise<Analysis> {
+  let result: Analysis | null = null
+  try {
+    await apiStream(
+      '/entries/parse/stream',
+      { subject, narrative },
+      ({ name, data }) => {
+        if (name === 'baseline') handlers.onBaseline?.(data as Analysis)
+        else if (name === 'status') handlers.onWaiting?.((data as { elapsed: number }).elapsed)
+        else if (name === 'result') result = data as Analysis
+      },
+      signal,
+    )
+  } catch (error) {
+    if (signal?.aborted) throw error
+    return parseEntry(subject, narrative, signal)
+  }
+  return result ?? (await parseEntry(subject, narrative, signal))
+}
 
 export interface CreateEntryPayload {
   subject: Subject

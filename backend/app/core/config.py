@@ -48,6 +48,30 @@ class Settings(BaseSettings):
     def corti_base_url(self) -> str:
         return f"https://api.{self.corti_environment}.corti.app/v2"
 
+    # --- dictation -------------------------------------------------------
+    dictation_enabled: bool = True
+    # Corti refuses audio faster than real speed, so a clip costs its own length
+    # in wall clock. 90s keeps the wait tolerable and stays well inside the
+    # 4000-character narrative ceiling (~4.5 minutes of speech).
+    dictation_max_seconds: int = 90
+    dictation_max_bytes: int = 8 * 1024 * 1024
+    # Corti asks for 250-500ms of audio per frame. Sized in seconds rather than
+    # bytes because a fixed byte count is a different duration at every bitrate —
+    # and too long a frame means a short clip arrives with no pacing and comes
+    # back empty.
+    dictation_chunk_seconds: float = 0.4
+    # Stays under both documented limits: 64000 bytes of buffering, 1 MB per frame.
+    dictation_max_chunk_bytes: int = 48_000
+    # 1.0 = real time. Corti warns that faster "may cause buffering issues,
+    # degraded results, or stream termination" — raise only after measuring.
+    dictation_speed: float = 1.0
+    # "en" is English (US). There is no en-IN model; en-GB is a separate one.
+    dictation_language: str = "en"
+
+    @property
+    def corti_transcribe_url(self) -> str:
+        return f"wss://api.{self.corti_environment}.corti.app/audio-bridge/v2/transcribe"
+
     # --- CORS / paging ---------------------------------------------------
     # The browser origins allowed to call this API. Only needed when the
     # frontend talks to the backend directly (VITE_API_URL set); through the

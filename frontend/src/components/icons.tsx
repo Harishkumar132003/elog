@@ -95,3 +95,17 @@ export const AlertIcon = (props: IconProps) => (
     <path d="M10 6.6v4M10 13.2h.01" />
   </svg>
 )
+
+export const MicIcon = (props: IconProps) => (
+  <svg {...base} {...props}>
+    <rect x="7.5" y="2.5" width="5" height="9" rx="2.5" />
+    <path d="M4.5 9a5.5 5.5 0 0 0 11 0" />
+    <path d="M10 14.5v3M7.5 17.5h5" />
+  </svg>
+)
+
+export const StopIcon = (props: IconProps) => (
+  <svg {...base} {...props}>
+    <rect x="5.5" y="5.5" width="9" height="9" rx="1.5" fill="currentColor" />
+  </svg>
+)

@@ -3,14 +3,8 @@ services:
     build:
       context: .
       args:
-        # Baked into the bundle at build time. Point it at wherever the backend
-        # is reachable FROM THE BROWSER — not the compose service name, which
-        # only resolves inside the network.
         VITE_API_URL: ${VITE_API_URL:-/api}
     environment:
-      # Read when the server starts, not baked into the bundle — so changing the
-      # domain is a restart, not a rebuild. Vite refuses any Host header not
-      # listed here, which is what nginx forwarding elog.wizzgeeks.com hits.
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-elog.wizzgeeks.com}
     ports:
       - "7205:7205"
