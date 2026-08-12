@@ -183,7 +183,7 @@ export function ExerciseEditor({ entryId, exercise, onChange }: Props) {
                 onClick={() => setCritical(question.id)}
               >
                 <AlertIcon width={13} height={13} />
-                {question.critical ? 'Fatal error' : 'Mark as fatal'}
+                {question.critical ? 'Critical question' : 'Make this the critical question'}
               </button>
             </div>
           </li>
@@ -194,7 +194,7 @@ export function ExerciseEditor({ entryId, exercise, onChange }: Props) {
         <p className={`panel-status${error ? ' is-error' : ''}`}>
           {error ??
             (criticalCount !== 1
-              ? 'Exactly one question must be the fatal error'
+              ? 'Exactly one question must be the critical question'
               : dirty
                 ? 'Unsaved changes'
                 : savedAt

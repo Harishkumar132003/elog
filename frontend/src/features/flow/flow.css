@@ -305,50 +305,46 @@
   color: var(--ink-3);
 }
 
-.axis-verdict {
-  margin-left: auto;
-  flex: 0 0 auto;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-3);
+/* ── parameters ────────────────────────────────────────────────────────── */
+/* An axis is a kind of variation; each parameter is one concrete way to vary
+   this case along it, and each becomes its own question. Indented to line up
+   under the checkbox so the rows read as belonging to the axis above them. */
+.axis-params {
+  padding: 0 14px 12px 41px;
 }
 
-.axis.is-on .axis-verdict {
-  color: var(--warm-deep);
-  font-weight: 650;
-}
-
-.axis-config {
+.axis-params-head {
   display: flex;
-  align-items: flex-end;
-  gap: 10px;
-  padding: 0 14px 13px 41px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   flex-wrap: wrap;
+  margin-bottom: 8px;
 }
 
-.axis-field {
+.param {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 7px;
+}
+
+/* The suggest button sits inside the field rather than beside it, so a row of
+   controls does not grow every time a parameter is added. */
+.param-input {
+  position: relative;
+  display: flex;
+  align-items: center;
   flex: 1 1 240px;
+  min-width: 0;
 }
 
-.axis-field-narrow {
-  flex: 0 0 80px;
-}
-
-.axis-field span {
-  font-size: 10.5px;
-  font-weight: 650;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-
-.axis-field input {
+.param-text {
+  width: 100%;
+  min-width: 0;
   height: 32px;
-  padding: 0 10px;
+  padding: 0 34px 0 10px;
   border: 1px solid var(--line-firm);
   border-radius: var(--r-xs);
   background: var(--surface);
@@ -356,9 +352,94 @@
   outline: none;
 }
 
-.axis-field input:focus {
+.param-marks {
+  flex: 0 0 62px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--line-firm);
+  border-radius: var(--r-xs);
+  background: var(--surface);
+  font-size: 13.5px;
+  text-align: center;
+  outline: none;
+}
+
+.param-suggest {
+  position: absolute;
+  right: 5px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: var(--r-xs);
+  background: none;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: color 0.16s var(--ease), background 0.16s var(--ease);
+}
+
+.param-suggest:hover:not(:disabled) {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.param-suggest:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.param-spin {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid var(--paper-deep);
+  border-top-color: var(--accent);
+  animation: param-spin 0.7s linear infinite;
+}
+
+@keyframes param-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.param-text:focus,
+.param-marks:focus {
   border-color: var(--warm);
   box-shadow: 0 0 0 3px rgba(138, 90, 0, 0.14);
+}
+
+/* Revealed on hover so a long list is not a column of shouting buttons, but
+   always reachable by keyboard, which never triggers hover. */
+.param-drop {
+  flex: 0 0 auto;
+  padding: 4px 6px;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--ink-3);
+  border-radius: var(--r-xs);
+  cursor: pointer;
+  opacity: 0;
+  transition: color 0.16s var(--ease), opacity 0.16s var(--ease);
+}
+
+.param:hover .param-drop,
+.param-drop:focus-visible {
+  opacity: 1;
+}
+
+.param-drop:hover {
+  color: var(--alert);
+}
+
+.param-add {
+  height: 28px;
+  padding: 0 8px;
+  font-size: 12.5px;
+  color: var(--ink-3);
 }
 
 .axis-critical {

@@ -196,12 +196,20 @@ export interface CandidateAxes {
   critical_why: string
 }
 
+/** One variation to test, and the question it becomes. Marks and the Critical
+ *  flag live here rather than on the axis: each parameter is its own question. */
+export interface ParameterChoice {
+  text: string
+  marks: number
+  critical: boolean
+}
+
 export interface AxisChoice {
   axis_id: string
   discriminates: boolean
-  parameter: string
-  critical: boolean
-  marks: number
+  /** An axis is a *kind* of variation, so one case is often worth testing along
+   *  it several ways. Each entry becomes one question. */
+  parameters: ParameterChoice[]
 }
 
 /* ── screen 4 ──────────────────────────────────────────────────────────── */

@@ -3,7 +3,6 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 from app.schemas.entry import EntryDetail
-from app.services.corti_templates import MAX_QUESTIONS
 
 
 class AxisOut(BaseModel):
@@ -45,14 +44,26 @@ class CandidateAxes(BaseModel):
     critical_why: str = ""
 
 
+class ParameterChoice(BaseModel):
+    """One variation to test, and the question it becomes.
+
+    Marks and the Critical flag live here rather than on the axis: each parameter
+    is its own question, and a question is what carries them.
+    """
+
+    text: str = Field(default="", max_length=400)
+    marks: int = Field(default=10, ge=1, le=100)
+    critical: bool = False
+
+
 class AxisChoice(BaseModel):
     axis_id: str
     # "The professor may tick, untick and set parameters within these axes, and mark
     # each as discriminates or cosmetic for the entity."
     discriminates: bool = True
-    parameter: str = Field(default="", max_length=400)
-    critical: bool = False
-    marks: int = Field(default=10, ge=1, le=100)
+    # An axis is a *kind* of variation, so one case can be worth testing along it
+    # several ways. Each entry here becomes one question.
+    parameters: list[ParameterChoice] = []
 
 
 class CertifyRequest(BaseModel):
@@ -106,7 +117,10 @@ class AnswerIn(BaseModel):
 
 
 class AttemptRequest(BaseModel):
-    answers: list[AnswerIn] = Field(min_length=1, max_length=MAX_QUESTIONS)
+    # No product cap on questions — an axis may carry as many parameters as the
+    # professor wants. This bound is a safety limit only: an unbounded list in a
+    # request body is a denial-of-service surface, and 100 is far past real use.
+    answers: list[AnswerIn] = Field(min_length=1, max_length=100)
 
 
 class ResultOut(BaseModel):

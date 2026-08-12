@@ -158,7 +158,7 @@ export function CaseFlow({ entryId, user, onBack, onChanged }: Props) {
             <h2>Waiting for certification</h2>
             <p>
               Your professor decides which variations of this case discriminate, and which
-              single mistake would be fatal. Your reasoning exercise is built from that.
+              single question you must get right. Your reasoning exercise is built from that.
             </p>
           </section>
         ))}

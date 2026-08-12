@@ -141,6 +141,14 @@ export interface AxisHint {
 export const suggestAxes = (entryId: string) =>
   api<AxisHint>(`/entries/${entryId}/axes/suggest`, { method: 'POST' })
 
+/** Concrete ways to vary this case along one axis. Not cached — pressing it
+ *  again should give a fresh set, not the same three back. */
+export const suggestParameters = (entryId: string, axisId: string) =>
+  api<{ parameters: string[]; source: string }>(
+    `/entries/${entryId}/axes/${axisId}/parameters/suggest`,
+    { method: 'POST' },
+  )
+
 export const certify = (entryId: string, axes: AxisChoice[]) =>
   api<Exercise>(`/entries/${entryId}/certify`, { method: 'POST', body: { axes } })
 

@@ -27,6 +27,7 @@ from app.schemas.flow import (
     ExerciseUpdate,
 )
 from app.services.axis_suggest import suggest_axes
+from app.services.parameter_suggest import suggest_parameters
 from app.services.exercise import generate_questions
 from app.services.scoring import pending_summary, score_answers
 
@@ -136,6 +137,20 @@ async def suggest(entry_id: str, professor: CurrentProfessor) -> dict[str, Any]:
     return hint
 
 
+@router.post("/{entry_id}/axes/{axis_id}/parameters/suggest")
+async def suggest_parameters_for_axis(
+    entry_id: str, axis_id: str, professor: CurrentProfessor
+) -> dict[str, Any]:
+    """Concrete ways to vary this case along one axis.
+
+    Deliberately not cached, unlike the axis shortlist. Pressing it again should
+    give a fresh set — a professor who did not like the first three wants
+    different ones, not the same three served from the entry.
+    """
+    entry = await _owned_entry(entry_id, professor)
+    return await suggest_parameters(mongo.serialize(entry), axis_id)  # type: ignore[arg-type]
+
+
 # --- Screen 3 · configure ------------------------------------------------
 @router.post("/{entry_id}/certify", response_model=ExerciseOut, status_code=status.HTTP_201_CREATED)
 async def certify(
@@ -164,11 +179,21 @@ async def certify(
             f"Axis not offered for this entry: {', '.join(unknown)}",
         )
 
-    critical = [axis for axis in chosen if axis.critical]
+    # One question per parameter, so an axis with nothing filled in produces nothing.
+    parameters = [p for axis in chosen for p in axis.parameters]
+    if not parameters:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "Add at least one parameter to a certified axis",
+        )
+
+    # Counted across every parameter, not per axis: the Critical item is one
+    # question in the whole exercise (§3.4), wherever the professor put it.
+    critical = [p for p in parameters if p.critical]
     if len(critical) != 1:
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
-            "Exactly one certified axis must carry the Critical (fatal-error) flag",
+            f"Exactly one parameter must be the critical question — found {len(critical)}",
         )
 
     certification = {

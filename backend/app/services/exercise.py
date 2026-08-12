@@ -1,7 +1,9 @@
 """Screen 4 · question generation.
 
-The professor's certification decides *what* is asked: one question per axis they
-marked as discriminating, with the fatal-error axis carrying the Critical flag.
+The professor's certification decides *what* is asked: one question per parameter
+they certified, with exactly one carrying the Critical flag. An axis may hold
+several parameters — it is a *kind* of variation, and a case is often worth
+testing along it more than one way — so the unit here is a slot, not an axis.
 Corti writes the questions; it can only vary the case along axes it was handed, so
 it cannot invent one.
 
@@ -19,7 +21,7 @@ from app.data.axes import BY_ID as AXIS_BY_ID
 from app.data.axes import subject_class
 from app.data.bloom import DEFAULT_MARKS, PSYCHOMOTOR_NOT_ASSESSED
 from app.services.corti import CortiError
-from app.services.corti_templates import MAX_QUESTIONS, question_template, run_template
+from app.services.corti_templates import question_template, run_template
 
 logger = logging.getLogger(__name__)
 
@@ -62,10 +64,33 @@ _FALLBACK_AFFECTIVE = {
 }
 
 
-def certified_axes(certification: dict[str, Any]) -> list[dict[str, Any]]:
-    """Only axes the professor marked as discriminating become questions."""
-    chosen = [axis for axis in certification.get("axes", []) if axis.get("discriminates")]
-    return chosen[:MAX_QUESTIONS]
+def certified_slots(certification: dict[str, Any]) -> list[dict[str, Any]]:
+    """One slot per parameter, flattened, in the professor's own order.
+
+    An axis is a *kind* of variation, so it can carry several parameters worth
+    testing — each becomes its own question. There is no cap: a professor who
+    wants nine questions gets nine.
+
+    Reads both shapes. A certification written before parameters were a list has
+    a flat `parameter` / `marks` / `critical` on the axis, and yields exactly the
+    one slot it always did — so old cases keep generating what they generated.
+    """
+    slots: list[dict[str, Any]] = []
+    for axis in certification.get("axes", []):
+        if not axis.get("discriminates"):
+            continue
+        parameters = axis.get("parameters")
+        if not parameters:
+            parameters = [
+                {
+                    "text": axis.get("parameter", ""),
+                    "marks": axis.get("marks", DEFAULT_MARKS),
+                    "critical": axis.get("critical", False),
+                }
+            ]
+        for parameter in parameters:
+            slots.append({"axis_id": axis["axis_id"], **parameter})
+    return slots
 
 
 def case_context(entry: dict[str, Any]) -> str:
@@ -92,16 +117,27 @@ def case_context(entry: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _axis_context(axes: list[dict[str, Any]]) -> str:
-    lines = ["CERTIFIED AXES — one question per slot, varying only along that axis."]
-    for index, entry in enumerate(axes, start=1):
-        axis = AXIS_BY_ID.get(entry["axis_id"])
+def _axis_context(slots: list[dict[str, Any]]) -> str:
+    """One SLOT per parameter.
+
+    Two slots can share an axis — the professor may want the same kind of
+    variation tested several ways — so the instruction is explicit that they must
+    not come out as the same question with different words.
+    """
+    lines = [
+        "CERTIFIED VARIATIONS — one question per slot, varying only along that "
+        "slot's axis and its parameter.",
+        "Slots may repeat an axis with a different parameter. When they do, the "
+        "questions must be genuinely different, not the same question reworded.",
+    ]
+    for index, slot in enumerate(slots, start=1):
+        axis = AXIS_BY_ID.get(slot["axis_id"])
         if axis is None:
             continue
         parts = [f"SLOT {index}: {axis['label']} — {axis['varies']}"]
-        if entry.get("parameter"):
-            parts.append(f"Professor's parameter: {entry['parameter']}")
-        if entry.get("critical"):
+        if slot.get("text"):
+            parts.append(f"Professor's parameter: {slot['text']}")
+        if slot.get("critical"):
             parts.append(
                 "THIS IS THE CRITICAL ITEM — the fatal error for this case. Write the "
                 "question so that a wrong answer is a disqualifying reasoning failure."
@@ -110,49 +146,51 @@ def _axis_context(axes: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-def _scripted(axes: list[dict[str, Any]], entry: dict[str, Any]) -> list[dict[str, Any]]:
-    """Deterministic questions, used only when Corti cannot be reached."""
+def _scripted(slots: list[dict[str, Any]], entry: dict[str, Any]) -> dict[int, dict[str, Any]]:
+    """Deterministic questions, used only when Corti cannot be reached.
+
+    Keyed by slot position, not by axis id: two slots can share an axis, and a
+    dict keyed on the axis would silently collapse them into one question.
+    """
     parsed = entry.get("parsed") or {}
     subject_line = (parsed.get("diagnosis") or {}).get("core") or "this case"
-    questions: list[dict[str, Any]] = []
+    questions: dict[int, dict[str, Any]] = {}
 
-    for index, chosen in enumerate(axes, start=1):
-        axis = AXIS_BY_ID.get(chosen["axis_id"])
+    for index, slot in enumerate(slots, start=1):
+        axis = AXIS_BY_ID.get(slot["axis_id"])
         if axis is None:
             continue
-        parameter = chosen.get("parameter") or axis["example"]
-        questions.append(
-            {
-                "id": index,
-                "axis_id": axis["id"],
-                "axis_label": axis["label"],
-                "prompt": (
-                    f"Same case of {subject_line.lower()}, but {axis['varies'].lower()} "
-                    f"({parameter}). What is your management now, and what makes it "
-                    "the right call?"
-                ),
-                "cognitive": _FALLBACK_COGNITIVE.get(str(axis["family"]), "Apply"),
-                "affective": _FALLBACK_AFFECTIVE.get(str(axis["family"]), "Responding"),
-                "psychomotor": PSYCHOMOTOR_NOT_ASSESSED,
-                "marks": int(chosen.get("marks") or DEFAULT_MARKS),
-                "critical": bool(chosen.get("critical")),
-            }
-        )
+        parameter = slot.get("text") or axis["example"]
+        questions[index] = {
+            "id": index,
+            "axis_id": axis["id"],
+            "axis_label": axis["label"],
+            "prompt": (
+                f"Same case of {subject_line.lower()}, but {axis['varies'].lower()} "
+                f"({parameter}). What is your management now, and what makes it "
+                "the right call?"
+            ),
+            "cognitive": _FALLBACK_COGNITIVE.get(str(axis["family"]), "Apply"),
+            "affective": _FALLBACK_AFFECTIVE.get(str(axis["family"]), "Responding"),
+            "psychomotor": PSYCHOMOTOR_NOT_ASSESSED,
+            "marks": int(slot.get("marks") or DEFAULT_MARKS),
+            "critical": bool(slot.get("critical")),
+        }
     return questions
 
 
 async def generate_questions(
     entry: dict[str, Any], certification: dict[str, Any]
 ) -> dict[str, Any]:
-    """One question per certified axis, tagged across the three domains."""
-    axes = certified_axes(certification)
-    if not axes:
+    """One question per certified parameter, tagged across the three domains."""
+    slots = certified_slots(certification)
+    if not slots:
         return {"questions": [], "source": "none"}
 
     try:
         # A template sized to exactly this many questions — no empty slots.
         fields = await run_template(
-            question_template(len(axes)), [case_context(entry), _axis_context(axes)]
+            question_template(len(slots)), [case_context(entry), _axis_context(slots)]
         )
     except CortiError as exc:
         logger.warning("Corti question generation unavailable: %s", exc)
@@ -161,40 +199,41 @@ async def generate_questions(
         logger.exception("Unexpected error generating questions")
         fields = None
 
+    scripted = _scripted(slots, entry)
     if not fields:
-        return {"questions": _scripted(axes, entry), "source": "rules-fallback"}
+        return {"questions": list(scripted.values()), "source": "rules-fallback"}
 
-    questions: list[dict[str, Any]] = []
-    for index, chosen in enumerate(axes, start=1):
-        axis = AXIS_BY_ID.get(chosen["axis_id"])
+    questions: dict[int, dict[str, Any]] = {}
+    for index, slot in enumerate(slots, start=1):
+        axis = AXIS_BY_ID.get(slot["axis_id"])
         prompt = str(fields.get(f"q{index}_prompt") or "").strip()
         if axis is None or not prompt:
             continue
         family = str(axis["family"])
-        questions.append(
-            {
-                "id": index,
-                "axis_id": axis["id"],
-                "axis_label": axis["label"],
-                "prompt": prompt,
-                "cognitive": fields.get(f"q{index}_cognitive")
-                or _FALLBACK_COGNITIVE.get(family, "Apply"),
-                "affective": fields.get(f"q{index}_affective")
-                or _FALLBACK_AFFECTIVE.get(family, "Responding"),
-                # §3.3 — psychomotor is assessed on real patients, not by this engine.
-                "psychomotor": PSYCHOMOTOR_NOT_ASSESSED,
-                "marks": int(chosen.get("marks") or DEFAULT_MARKS),
-                "critical": bool(chosen.get("critical")),
-            }
-        )
+        questions[index] = {
+            "id": index,
+            "axis_id": axis["id"],
+            "axis_label": axis["label"],
+            "prompt": prompt,
+            "cognitive": fields.get(f"q{index}_cognitive")
+            or _FALLBACK_COGNITIVE.get(family, "Apply"),
+            "affective": fields.get(f"q{index}_affective")
+            or _FALLBACK_AFFECTIVE.get(family, "Responding"),
+            # §3.3 — psychomotor is assessed on real patients, not by this engine.
+            "psychomotor": PSYCHOMOTOR_NOT_ASSESSED,
+            "marks": int(slot.get("marks") or DEFAULT_MARKS),
+            "critical": bool(slot.get("critical")),
+        }
 
-    # A partial generation is worse than a scripted set the resident can actually answer.
-    if len(questions) < len(axes):
-        scripted = {q["axis_id"]: q for q in _scripted(axes, entry)}
-        have = {q["axis_id"] for q in questions}
-        questions += [q for axis_id, q in scripted.items() if axis_id not in have]
-        questions.sort(key=lambda q: [a["axis_id"] for a in axes].index(q["axis_id"]))
-        for position, question in enumerate(questions, start=1):
-            question["id"] = position
+    # A partial generation is worse than a scripted set the resident can actually
+    # answer, so any slot Corti skipped falls back to its scripted twin. Keyed on
+    # slot position throughout: two slots may share an axis, and keying on the
+    # axis would drop the second one.
+    for index, question in scripted.items():
+        questions.setdefault(index, question)
 
-    return {"questions": questions, "source": "corti" if fields else "rules-fallback"}
+    ordered = [questions[index] for index in sorted(questions)]
+    for position, question in enumerate(ordered, start=1):
+        question["id"] = position
+
+    return {"questions": ordered, "source": "corti"}

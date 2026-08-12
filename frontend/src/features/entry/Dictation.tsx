@@ -39,16 +39,21 @@ const clock = (seconds: number) =>
 
 export function Dictation({
   onText,
+  onBusy,
   disabled,
 }: {
   /** Called once with the finished transcript. Appending is the caller's job. */
   onText: (text: string) => void
+  /** Transcription started or stopped, and how long the clip was.
+   *
+   *  The loader covers the case box, which lives in the parent — so the phase
+   *  has to travel up rather than being drawn here.
+   */
+  onBusy?: (busy: boolean, seconds: number) => void
   disabled?: boolean
 }) {
   const [phase, setPhase] = useState<Phase>('idle')
   const [elapsed, setElapsed] = useState(0)
-  const [progress, setProgress] = useState(0)
-  const [preview, setPreview] = useState('')
   const [error, setError] = useState<string | null>(null)
   /** Undecided until the device list comes back — the button appears only once
    *  we know there is something to record with. */
@@ -111,16 +116,14 @@ export function Dictation({
   const transcribe = useCallback(
     async (clip: Blob, durationMs: number) => {
       setPhase('working')
-      setPreview('')
-      setProgress(0)
+      onBusy?.(true, durationMs / 1000)
       abort.current = new AbortController()
       try {
-        const result = await transcribeRecording(
-          clip,
-          durationMs,
-          { onPartial: setPreview, onProgress: setProgress },
-          abort.current.signal,
-        )
+        // Interim results still arrive and are deliberately ignored: a sentence
+        // that rewrites itself while you read it looks broken even when it is
+        // working. They are left on because they keep the connection busy
+        // between heartbeats, which is what stops a proxy cutting it.
+        const result = await transcribeRecording(clip, durationMs, {}, abort.current.signal)
         if (result.reason === 'no_speech' || !result.text.trim()) {
           setError("We didn't catch anything — try again a little closer to the mic")
         } else {
@@ -132,11 +135,11 @@ export function Dictation({
         setError(cause instanceof Error ? cause.message : 'Could not transcribe that recording')
       } finally {
         setPhase('idle')
-        setPreview('')
+        onBusy?.(false, 0)
         abort.current = null
       }
     },
-    [onText],
+    [onText, onBusy],
   )
 
   const start = useCallback(async () => {
@@ -212,14 +215,8 @@ export function Dictation({
         </button>
       )}
 
-      {phase === 'working' && (
-        <span className="dictate-working" role="status" aria-live="polite">
-          <span className="dictate-bar" aria-hidden>
-            <span style={{ width: `${Math.round(progress * 100)}%` }} />
-          </span>
-          Getting your words…
-        </span>
-      )}
+      {/* Nothing is drawn here while transcribing: the loader covers the case box
+          instead, so there is exactly one moving thing on the screen. */}
 
       {error && (
         <p className="dictate-error" role="alert">
@@ -227,11 +224,6 @@ export function Dictation({
           {error}
         </p>
       )}
-
-      {/* The live transcript, shown while it is still arriving. It is not written
-          into the case box until the whole recording is done — half a sentence
-          that keeps changing is impossible to edit around. */}
-      {phase === 'working' && preview && <p className="dictate-preview">{preview}</p>}
     </div>
   )
 }

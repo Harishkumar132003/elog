@@ -10,12 +10,16 @@ export interface TranscriptResult {
   reason: string | null
 }
 
-/** Send one recording and receive the words as they are produced.
+/** Send one recording and get the finished transcript back.
  *
- *  The reply is a stream rather than a single response because Corti will not
- *  take audio faster than real speed — a 90-second clip costs 90 seconds — and a
- *  silent connection that long gets cut by Cloudflare. `onPartial` fires as text
- *  arrives; `onProgress` is the heartbeat that keeps the connection alive.
+ *  The reply is a stream rather than a single response because transcription
+ *  takes about as long as the clip itself, and a connection that silent gets cut
+ *  by Cloudflare. The stream is what keeps it alive, not what the screen shows:
+ *  the entry form deliberately ignores the partial text and waits for the whole
+ *  thing, because a sentence that rewrites itself mid-read looks broken.
+ *
+ *  `onPartial` and `onProgress` are offered for callers that do want the live
+ *  view — nothing uses them today.
  */
 export async function transcribeRecording(
   clip: Blob,

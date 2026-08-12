@@ -448,17 +448,6 @@
 /* Shown while the streamed parse is still being refined by the AI. The screen
    opens on the rule-based read, so this is what stops a provisional answer
    being mistaken for a final one. */
-.review-pending {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 26px;
-  border-bottom: 1px solid var(--accent-line);
-  background: var(--accent-soft);
-  color: var(--accent-deep);
-  font-size: 12.5px;
-  font-weight: 550;
-}
 
 /* ── dictation ─────────────────────────────────────────────────────────── */
 /* The mic sits on the label row rather than in `.field-foot`, which is a
@@ -519,32 +508,6 @@
   opacity: 0.85;
 }
 
-.dictate-working {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  font-size: var(--t-tiny);
-  color: var(--ink-3);
-}
-
-/* Progress is known — the clip's own length — so it is a real bar, not a spinner. */
-.dictate-bar {
-  display: block;
-  width: 54px;
-  height: 4px;
-  border-radius: 3px;
-  background: var(--paper-deep);
-  overflow: hidden;
-}
-
-.dictate-bar span {
-  display: block;
-  height: 100%;
-  border-radius: 3px;
-  background: var(--accent);
-  transition: width 0.4s var(--ease);
-}
-
 .dictate-error {
   flex: 1 1 100%;
   display: flex;
@@ -553,22 +516,6 @@
   font-size: 12.5px;
   line-height: 1.5;
   color: var(--warm-deep);
-  text-align: left;
-}
-
-/* The words as they arrive. Deliberately not written into the case box until the
-   recording is finished — a half-sentence that keeps rewriting itself is
-   impossible to edit around. */
-.dictate-preview {
-  flex: 1 1 100%;
-  margin-top: 2px;
-  padding: 9px 12px;
-  border-radius: var(--r-sm);
-  border: 1px dashed var(--accent-line);
-  background: var(--accent-soft);
-  font-size: 13.5px;
-  line-height: 1.55;
-  color: var(--ink-2);
   text-align: left;
 }
 
@@ -581,5 +528,93 @@
     margin-left: 0;
     width: 100%;
     justify-content: flex-start;
+  }
+}
+
+/* ── the transcription loader ──────────────────────────────────────────── */
+/* Covers the case box while a recording is turned into text. Nothing of the
+   transcript is shown until it is complete — Corti sends interim results that
+   rewrite themselves, and watching a sentence change under you reads as broken
+   even when it is working. */
+.textbox-wrap {
+  position: relative;
+}
+
+.textbox-wrap.is-busy .textbox {
+  /* The resident's own typing stays legible underneath rather than greying out;
+     it is still theirs and the dictation is about to be added to it. */
+  background: var(--surface-sunk);
+}
+
+.textbox-loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  border-radius: var(--r-md);
+  /* Not fully opaque: what is already written stays faintly visible, so the
+     box still reads as the resident's own field rather than a blank panel. */
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(2px);
+  text-align: center;
+}
+
+/* The app's first spinner — built from the existing tokens rather than a new
+   asset, so it inherits the theme with everything else. */
+.textbox-spinner {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2.5px solid var(--paper-deep);
+  border-top-color: var(--accent);
+  animation: textbox-spin 0.75s linear infinite;
+}
+
+@keyframes textbox-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.textbox-loader-title {
+  font-size: var(--t-small);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Determinate, because a real number exists: transcription runs at roughly the
+   speed the clip was spoken, and the clip's length is known. */
+.textbox-loader-bar {
+  width: min(240px, 70%);
+  height: 5px;
+  border-radius: 3px;
+  background: var(--paper-deep);
+  overflow: hidden;
+}
+
+.textbox-loader-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+  transition: width 0.2s linear;
+}
+
+.textbox-loader-note {
+  font-size: 12px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The spin is decorative; the bar and the counter carry the meaning, so only
+   the rotation stops. */
+@media (prefers-reduced-motion: reduce) {
+  .textbox-spinner {
+    animation: none;
+    border-top-color: var(--accent);
   }
 }

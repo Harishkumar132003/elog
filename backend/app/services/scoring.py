@@ -12,7 +12,7 @@ from typing import Any
 
 from app.data.bloom import COGNITIVE_LEVELS
 from app.services.corti import CortiError
-from app.services.corti_templates import MAX_QUESTIONS, run_template, scoring_template
+from app.services.corti_templates import run_template, scoring_template
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,8 @@ _FAILING_VERDICTS = {"incorrect"}
 
 def _answer_context(questions: list[dict[str, Any]], answers: dict[int, str]) -> str:
     blocks: list[str] = []
-    for question in questions[:MAX_QUESTIONS]:
+    # Every question is marked — the exercise is as long as the professor made it.
+    for question in questions:
         slot = question["id"]
         blocks.append(
             "\n".join(

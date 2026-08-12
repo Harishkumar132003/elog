@@ -37,12 +37,17 @@ AXIS_TEMPLATE = "axis_suggest"
 QUESTION_TEMPLATE = "question_gen"
 SCORING_TEMPLATE = "answer_score"
 EXTRACT_TEMPLATE = "competency_extract"
+PARAMETER_TEMPLATE = "parameter_suggest"
 
-# A professor certifies a handful of axes; five slots covers every seed case in §4.
+# Default slot count when a spec is built without one. NOT a cap — an exercise
+# may hold as many questions as the professor certifies parameters, and the spec
+# for any size is built on demand.
 MAX_QUESTIONS = 5
 # The shortlist the AI proposes. Deliberately smaller than the offered set —
 # a suggestion of ten is not a suggestion.
 MAX_SUGGESTIONS = 4
+# Parameters proposed per axis. A set to prune, not a single line to accept.
+MAX_PARAMETERS = 3
 
 OMISSION_KEYS = ["laterality", "consent", "anaesthesia", "indication", "complication", "followup"]
 MARK_VALUES = [str(n) for n in range(0, 11)]
@@ -309,6 +314,35 @@ _SPECS: dict[str, dict[str, Any]] = {
         ),
         "sections": _scoring_sections(),
     },
+    PARAMETER_TEMPLATE: {
+        "name": "opbook360-parameter-suggest",
+        "prompt": (
+            "You advise an Indian postgraduate medical professor who has chosen ONE "
+            "axis — one kind of variation — and now needs concrete ways to vary this "
+            "particular case along it.\n"
+            "A parameter is the specific change, not the question: 'presenting on day "
+            "5 with a walled-off mass', not 'what would you do if...'.\n"
+            "Each must be clinically real for THIS case, and each must change what a "
+            "competent resident would decide. A variation that is merely true but "
+            "changes no decision is cosmetic and must be left out.\n"
+            "They must differ from one another in substance, not wording. Return "
+            "fewer than three if the case genuinely offers fewer."
+        ),
+        "sections": [
+            {
+                "key": "parameters",
+                "heading": "Parameters",
+                "prompt": (
+                    "Give up to three concrete parameters for the axis named in the "
+                    "context, each at most 20 words, each a specific variation of this "
+                    "case. No numbering, no question marks — just the variation."
+                ),
+                # A plain string array: proven to work when competency extraction
+                # was built, and it needs no numbered slots.
+                "schema": {"type": "array", "items": {"type": "string"}},
+            }
+        ],
+    },
     EXTRACT_TEMPLATE: {
         "name": "opbook360-competency-extract",
         "prompt": (
@@ -342,8 +376,12 @@ _SPECS: dict[str, dict[str, Any]] = {
 
 
 def _sized(base: str, count: int) -> str:
-    """Template key for an exercise of exactly `count` questions."""
-    return f"{base}_{max(1, min(count, MAX_QUESTIONS))}"
+    """Template key for an exercise of exactly `count` questions.
+
+    Unclamped: an axis may carry as many parameters as the professor wants, and
+    each is a question. The spec for any size is built on demand by `_spec_for`.
+    """
+    return f"{base}_{max(1, count)}"
 
 
 # --- the parse template, which depends on the professor's catalogue ---------
@@ -394,10 +432,26 @@ async def _parse_spec(key: str) -> dict[str, Any]:
 _SUBJECT_BY_KEY: dict[str, str] = {parse_template(s.value): s.value for s in Subject}
 
 
+def _sized_spec(base: str, key: str, sections: Any) -> dict[str, Any]:
+    """A question or scoring spec for whatever count the key names."""
+    count = max(1, int(key.rpartition("_")[2]))
+    return {**_SPECS[base], "name": f"{_SPECS[base]['name']}-{count}", "sections": sections(count)}
+
+
 async def _spec_for(key: str) -> dict[str, Any]:
-    """Static specs by key; the parse specs are built from the live catalogue."""
+    """Static specs by key; the sized and parse specs are built on demand.
+
+    Question and scoring templates used to be pre-registered for counts 1..5,
+    which put a hard ceiling on how many questions an exercise could hold. Built
+    here instead, any size provisions itself on first use and is then cached in
+    Mongo like every other template.
+    """
     if key.startswith(f"{PARSE_TEMPLATE}:") or key == PARSE_TEMPLATE:
         return await _parse_spec(key)
+    if key.startswith(f"{QUESTION_TEMPLATE}_"):
+        return _sized_spec(QUESTION_TEMPLATE, key, _question_sections)
+    if key.startswith(f"{SCORING_TEMPLATE}_"):
+        return _sized_spec(SCORING_TEMPLATE, key, _scoring_sections)
     return _SPECS[key]
 
 
@@ -407,22 +461,6 @@ def question_template(count: int) -> str:
 
 def scoring_template(count: int) -> str:
     return _sized(SCORING_TEMPLATE, count)
-
-
-# Expand the two slotted specs into one variant per question count. Each is
-# provisioned on first use and cached in Mongo, so the extra templates cost one
-# bootstrap each and nothing thereafter.
-for _count in range(1, MAX_QUESTIONS + 1):
-    _SPECS[_sized(QUESTION_TEMPLATE, _count)] = {
-        **_SPECS[QUESTION_TEMPLATE],
-        "name": f"opbook360-question-gen-{_count}",
-        "sections": _question_sections(_count),
-    }
-    _SPECS[_sized(SCORING_TEMPLATE, _count)] = {
-        **_SPECS[SCORING_TEMPLATE],
-        "name": f"opbook360-answer-score-{_count}",
-        "sections": _scoring_sections(_count),
-    }
 
 
 def _fingerprint(spec: dict[str, Any]) -> str:
@@ -496,8 +534,10 @@ __all__ = [
     "ALL_AXIS_IDS",
     "AXIS_TEMPLATE",
     "EXTRACT_TEMPLATE",
+    "MAX_PARAMETERS",
     "MAX_QUESTIONS",
     "MAX_SUGGESTIONS",
+    "PARAMETER_TEMPLATE",
     "PARSE_TEMPLATE",
     "QUESTION_TEMPLATE",
     "SCORING_TEMPLATE",

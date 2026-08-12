@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AiIcon, ArrowIcon, CheckIcon } from '../../components/icons'
 import { createEntry, getCompetencies, getSubjects, parseEntryStream } from '../../lib/entries'
 import { Dictation, canDictate } from './Dictation'
+import { TranscribeLoader } from './TranscribeLoader'
 import type { Analysis, Competency, DopsRole, Entry, Subject, SubjectMeta } from '../../types'
 import './entry.css'
 
@@ -28,6 +29,9 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
   const [analysing, setAnalysing] = useState(false)
   /** Seconds the AI has been working; shown once the wait is noticeable. */
   const [waiting, setWaiting] = useState(0)
+  /** Set while a recording is being transcribed; carries the clip's length so
+   *  the loader can count against it. */
+  const [transcribing, setTranscribing] = useState<{ seconds: number } | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -95,38 +99,24 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
 
     // Only the fields the resident has not touched follow the parse. Once they
     // have corrected something, the AI arriving late must not overwrite it.
-    const adopt = (result: Analysis, force: boolean) => {
+    const adopt = (result: Analysis) => {
       setAnalysis(result)
-      setFix((current) =>
-        force || !current
-          ? {
-              diagnosis: result.parsed.diagnosis?.display ?? '',
-              procedure: result.parsed.procedure?.display ?? '',
-              age: result.parsed.patient?.age ? String(result.parsed.patient.age) : '',
-              sex: result.parsed.patient?.sex ?? '',
-            }
-          : current,
-      )
+      setFix({
+        diagnosis: result.parsed.diagnosis?.display ?? '',
+        procedure: result.parsed.procedure?.display ?? '',
+        age: result.parsed.patient?.age ? String(result.parsed.patient.age) : '',
+        sex: result.parsed.patient?.sex ?? '',
+      })
     }
 
     try {
-      const result = await parseEntryStream(
-        subject,
-        trimmed,
-        {
-          // The rule-based read lands in a tenth of a second. Showing it at once
-          // beats a spinner: the resident starts checking real values while the
-          // AI is still working, and the refined answer replaces them in place.
-          onBaseline: (draft) => {
-            analysedFor.current = key
-            adopt(draft, true)
-            setEditing(false)
-          },
-          onWaiting: setWaiting,
-        },
-      )
+      // The rules read lands in a tenth of a second and the AI's a few seconds
+      // later, but the review screen waits for the finished answer. Opening it
+      // early meant the resident began checking values that then changed under
+      // them, which reads as the app correcting its own mistake.
+      const result = await parseEntryStream(subject, trimmed, { onWaiting: setWaiting })
       analysedFor.current = key
-      adopt(result, true)
+      adopt(result)
       // The AI's pick seeds the dropdown; with one competency there is nothing to
       // choose and the fallback picks it anyway.
       setCompetencyId(result.competency?.id ?? (competencies.length === 1 ? competencies[0].id : ''))
@@ -205,17 +195,6 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
         </header>
 
         <section className="card review">
-          {/* The rules read arrives in a tenth of a second and this screen opens on
-              it, so the resident must be told the AI has not finished — otherwise a
-              provisional parse looks like a final one. */}
-          {analysing && (
-            <p className="review-pending">
-              <AiIcon width={13} height={13} />
-              Still checking with AI{waiting >= 3 ? ` · ${Math.round(waiting)}s` : ''} — these
-              fields may still change.
-            </p>
-          )}
-
           <div className="review-competency">
             <span className="review-badge">
               <AiIcon width={13} height={13} />
@@ -373,11 +352,11 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
             className="btn btn-primary"
             // Without a competency the case has nothing to be evidence *of*, and
             // the whole exercise downstream is built from it.
-            disabled={saving || analysing || (competencies.length > 1 && !competencyId)}
+            disabled={saving || (competencies.length > 1 && !competencyId)}
             onClick={save}
           >
             <CheckIcon width={16} height={16} />
-            {saving ? 'Saving…' : analysing ? 'Waiting for the AI…' : 'Confirm & save to logbook'}
+            {saving ? 'Saving…' : 'Confirm & save to logbook'}
           </button>
         </div>
       </div>
@@ -446,20 +425,37 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
                 ? 'What did you study?'
                 : 'What did you do?'}
             </label>
-            {canDictate() && <Dictation onText={appendDictated} disabled={analysing} />}
+            {canDictate() && (
+              <Dictation
+                onText={appendDictated}
+                onBusy={(busy, seconds) => setTranscribing(busy ? { seconds } : null)}
+                disabled={analysing}
+              />
+            )}
           </div>
-          <textarea
-            id="narrative"
-            ref={textarea}
-            className="textbox prose"
-            value={narrative}
-            placeholder={PLACEHOLDER[meta?.subject_class ?? 'clinical']}
-            spellCheck
-            onChange={(event) => setNarrative(event.target.value)}
-            onKeyDown={(event) => {
-              if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') void analyse()
-            }}
-          />
+
+          {/* The textarea has no positioned parent of its own, so the loader
+              needs this wrapper to sit over it. */}
+          <div className={`textbox-wrap${transcribing ? ' is-busy' : ''}`}>
+            <textarea
+              id="narrative"
+              ref={textarea}
+              className="textbox prose"
+              value={narrative}
+              placeholder={PLACEHOLDER[meta?.subject_class ?? 'clinical']}
+              spellCheck
+              // readOnly rather than disabled: the resident's own typing stays
+              // legible behind the veil, and the field keeps its place in the
+              // accessibility tree.
+              readOnly={transcribing !== null}
+              aria-busy={transcribing !== null}
+              onChange={(event) => setNarrative(event.target.value)}
+              onKeyDown={(event) => {
+                if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') void analyse()
+              }}
+            />
+            {transcribing && <TranscribeLoader seconds={transcribing.seconds} />}
+          </div>
           <div className="field-foot">
             <span className="field-help">
               <strong>Free text, not a form.</strong> What you leave out is signal too.
