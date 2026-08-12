@@ -143,10 +143,12 @@ export const suggestAxes = (entryId: string) =>
 
 /** Concrete ways to vary this case along one axis. Not cached — pressing it
  *  again should give a fresh set, not the same three back. */
-export const suggestParameters = (entryId: string, axisId: string) =>
+export const suggestParameters = (entryId: string, axisId: string, existing: string[] = []) =>
   api<{ parameters: string[]; source: string }>(
     `/entries/${entryId}/axes/${axisId}/parameters/suggest`,
-    { method: 'POST' },
+    // What is already on the axis goes with the request, so the model proposes
+    // something new instead of the same obvious variation every time.
+    { method: 'POST', body: { existing } },
   )
 
 export const certify = (entryId: string, axes: AxisChoice[]) =>

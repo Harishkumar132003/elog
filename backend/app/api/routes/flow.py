@@ -25,6 +25,7 @@ from app.schemas.flow import (
     CertifyRequest,
     ExerciseOut,
     ExerciseUpdate,
+    ParameterSuggestRequest,
 )
 from app.services.axis_suggest import suggest_axes
 from app.services.parameter_suggest import suggest_parameters
@@ -139,16 +140,26 @@ async def suggest(entry_id: str, professor: CurrentProfessor) -> dict[str, Any]:
 
 @router.post("/{entry_id}/axes/{axis_id}/parameters/suggest")
 async def suggest_parameters_for_axis(
-    entry_id: str, axis_id: str, professor: CurrentProfessor
+    entry_id: str,
+    axis_id: str,
+    professor: CurrentProfessor,
+    payload: ParameterSuggestRequest | None = None,
 ) -> dict[str, Any]:
     """Concrete ways to vary this case along one axis.
 
     Deliberately not cached, unlike the axis shortlist. Pressing it again should
     give a fresh set — a professor who did not like the first three wants
     different ones, not the same three served from the entry.
+
+    Whatever they already have on the axis is sent along, so the model proposes
+    something new rather than the same obvious variation a third time.
     """
     entry = await _owned_entry(entry_id, professor)
-    return await suggest_parameters(mongo.serialize(entry), axis_id)  # type: ignore[arg-type]
+    return await suggest_parameters(
+        mongo.serialize(entry),  # type: ignore[arg-type]
+        axis_id,
+        payload.existing if payload else [],
+    )
 
 
 # --- Screen 3 · configure ------------------------------------------------

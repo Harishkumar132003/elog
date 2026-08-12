@@ -35,6 +35,13 @@ class Settings(BaseSettings):
     corti_timeout_seconds: float = 150.0
     # Tokens live 300s; refresh early so a call never races the expiry.
     corti_token_skew_seconds: int = 45
+    # A ceiling for the interactive "suggest" calls, which block a request rather
+    # than streaming. It must stay well under Cloudflare's 100s idle limit: the
+    # 150s HTTP timeout above is LONGER than that, so a hung Corti call would be
+    # cut off as a 524 while this server waited another 50 seconds. Measured
+    # latency is 2.7-5.5s, so 30s is six times the worst case and still fails
+    # cleanly — the professor writes their own, which is the fallback anyway.
+    suggest_timeout_seconds: float = 30.0
     corti_enabled: bool = True
 
     @property

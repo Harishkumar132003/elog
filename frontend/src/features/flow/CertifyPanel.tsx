@@ -176,7 +176,7 @@ export function CertifyPanel({ entryId, axes, onCertified }: Props) {
     setThinking(`${axisId}:${index}`)
     setError(null)
     try {
-      const { parameters } = await suggestParameters(entryId, axisId)
+      const { parameters } = await suggestParameters(entryId, axisId, [...taken])
       const fresh = parameters.filter((text) => !taken.has(text.trim().toLowerCase()))
       if (!fresh.length) {
         setError(

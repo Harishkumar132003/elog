@@ -44,6 +44,12 @@ class CandidateAxes(BaseModel):
     critical_why: str = ""
 
 
+class ParameterSuggestRequest(BaseModel):
+    """What the professor already has on this axis, so the AI proposes something new."""
+
+    existing: list[str] = Field(default=[], max_length=20)
+
+
 class ParameterChoice(BaseModel):
     """One variation to test, and the question it becomes.
 

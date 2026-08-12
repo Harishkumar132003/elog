@@ -30,7 +30,7 @@ FAMILY_LABELS: dict[Family, tuple[str, str]] = {
     ),
     Family.PRESENTATION: ("Presentation", "How and when the patient presents."),
     Family.CONTEXT: (
-        "Context (India-specific)",
+        "Context",
         "The setting constrains what is possible.",
     ),
     Family.COURSE: ("Course", "What happens after the initial decision."),

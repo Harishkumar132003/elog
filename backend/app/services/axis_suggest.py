@@ -13,16 +13,19 @@ the closure rule:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
 from app.data.axes import BY_ID as AXIS_BY_ID
+from app.core.config import get_settings
 from app.data.axes import candidate_axes
 from app.services.corti import CortiError
 from app.services.corti_templates import AXIS_TEMPLATE, MAX_SUGGESTIONS, run_template
 from app.services.exercise import case_context
 
 logger = logging.getLogger(__name__)
+_settings = get_settings()
 
 
 def _allowed_context(entry: dict[str, Any]) -> tuple[str, set[str]]:
@@ -44,7 +47,11 @@ async def suggest_axes(entry: dict[str, Any]) -> dict[str, Any]:
     context, allowed = _allowed_context(entry)
 
     try:
-        fields = await run_template(AXIS_TEMPLATE, [case_context(entry), context])
+        async with asyncio.timeout(_settings.suggest_timeout_seconds):
+            fields = await run_template(AXIS_TEMPLATE, [case_context(entry), context])
+    except TimeoutError:
+        logger.warning("Corti took longer than %ss; falling back", _settings.suggest_timeout_seconds)
+        fields = None
     except CortiError as exc:
         logger.warning("Corti axis suggestion unavailable: %s", exc)
         fields = None
