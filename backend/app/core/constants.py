@@ -47,7 +47,15 @@ ROLE_LABELS: dict[str, dict[DopsRole, tuple[str, str]]] = {
         DopsRole.INDEPENDENT: ("Independent performer", "reported it yourself"),
         DopsRole.SUPERVISOR: ("Supervisor", "checked someone else's report"),
     },
+    # A pre-clinical entry is a topic rather than a patient, so the hints change
+    # — but the four working identities still need a label here. Without one
+    # they fell through to the raw enum value and a Physiology roster read
+    # "observed", "supervised", "supervisor" in lower case.
     "pre-clinical": {
+        DopsRole.OBSERVED: ("Observer", "attended the session"),
+        DopsRole.SUPERVISED: ("Performer with supervision", "presented it with a senior"),
+        DopsRole.INDEPENDENT: ("Independent performer", "prepared and ran it yourself"),
+        DopsRole.SUPERVISOR: ("Supervisor", "oversaw someone else running it"),
         DopsRole.TOPIC: ("Topic-based", "a topic, not a patient"),
     },
 }
