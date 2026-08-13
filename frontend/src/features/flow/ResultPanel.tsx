@@ -111,11 +111,11 @@ export function ResultPanel({
       </ol>
       )}
 
-      {attempt.source !== 'corti' && (
+      {/* {attempt.source !== 'corti' && (
         <p className="result-note">
           Marked without the AI service — these marks are provisional.
         </p>
-      )}
+      )} */}
     </section>
   )
 }

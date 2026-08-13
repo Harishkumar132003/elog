@@ -17,7 +17,7 @@ from app.core.config import get_settings
 from app.core.constants import DopsRole, EntryStatus, Role, role_labels
 from app.data.axes import BY_ID as AXIS_BY_ID
 from app.data.axes import FAMILY_LABELS, Family, candidate_axes, subject_class
-from app.data.bloom import AFFECTIVE_LEVELS, COGNITIVE_LEVELS, PSYCHOMOTOR_ASSESSABLE
+from app.data.bloom import AFFECTIVE_LEVELS, COGNITIVE_LEVELS, PSYCHOMOTOR_LEVELS
 from app.db import mongo
 from app.schemas.flow import (
     AttemptOut,
@@ -373,7 +373,7 @@ async def add_question(
             "cognitive": payload.cognitive if payload.cognitive in COGNITIVE_LEVELS else cognitive,
             "affective": payload.affective if payload.affective in AFFECTIVE_LEVELS else affective,
             "psychomotor": payload.psychomotor
-            if payload.psychomotor in PSYCHOMOTOR_ASSESSABLE
+            if payload.psychomotor in PSYCHOMOTOR_LEVELS
             else default_psychomotor(entry),
             "marks": payload.marks,
             "critical": payload.critical,
@@ -614,7 +614,7 @@ async def update_exercise(
                 "cognitive": edit.cognitive,
                 "affective": edit.affective,
                 "psychomotor": edit.psychomotor
-                if edit.psychomotor in PSYCHOMOTOR_ASSESSABLE
+                if edit.psychomotor in PSYCHOMOTOR_LEVELS
                 else question.get("psychomotor") or default_psychomotor(entry),
             }
         )

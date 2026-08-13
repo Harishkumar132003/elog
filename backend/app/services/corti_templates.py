@@ -27,7 +27,7 @@ from typing import Any
 from app.core.config import get_settings
 from app.core.constants import Subject
 from app.data.axes import ALL_IDS as ALL_AXIS_IDS
-from app.data.bloom import AFFECTIVE_LEVELS, COGNITIVE_LEVELS, PSYCHOMOTOR_ASSESSABLE
+from app.data.bloom import AFFECTIVE_LEVELS, COGNITIVE_LEVELS, PSYCHOMOTOR_LEVELS
 from app.db import mongo
 from app.services.corti import CortiError, corti
 
@@ -165,15 +165,18 @@ def _question_sections(slots: int = MAX_QUESTIONS) -> list[dict[str, Any]]:
                 "key": f"q{slot}_psychomotor",
                 "heading": f"Question {slot} psychomotor level",
                 "prompt": (
-                    f"Simpson's psychomotor level engaged by question {slot}. Only the "
-                    "three preparatory levels are available, because a written answer "
-                    "cannot demonstrate performed skill: 'Perception' where the "
-                    "question turns on what was noticed or read from the patient, "
-                    "'Set' where it turns on readiness — anticipating, preparing, "
-                    "knowing when to act — and 'Guided response' where it turns on "
-                    f"carrying out a step under direction. Empty if there is no SLOT {slot}."
+                    f"Simpson's psychomotor level engaged by question {slot}, judged "
+                    "from the skill the person actually exercised in this case: "
+                    "'Perception' for noticing and reading the patient, 'Set' for "
+                    "readiness and anticipation, 'Guided response' for carrying out a "
+                    "step under direction, 'Mechanism' for performing it habitually "
+                    "and unaided, 'Complex overt response' for smooth skilled "
+                    "performance, 'Adaptation' for altering the technique to fit this "
+                    "situation, and 'Origination' for devising a new approach. Use "
+                    "the person's role as the anchor and the question as the "
+                    f"refinement. Empty if there is no SLOT {slot}."
                 ),
-                "schema": {"type": "string", "enum": PSYCHOMOTOR_ASSESSABLE},
+                "schema": {"type": "string", "enum": PSYCHOMOTOR_LEVELS},
             }
         )
     return sections

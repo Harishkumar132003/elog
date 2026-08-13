@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from typing import Any
 
 from app.data.axes import BY_ID as AXIS_BY_ID
@@ -55,11 +56,23 @@ def _axis_brief(axis: dict[str, str], existing: list[str]) -> str:
     return "\n".join(lines)
 
 
+# A leading list marker, and only that: a bullet, or one or two digits closed by
+# a dot or bracket and followed by a space.
+#
+# This was a character-class `lstrip("-•*0123456789.() ")`, which strips *any*
+# leading digit — so "12-year-old male presenting with wrist pain" arrived as
+# "year-old male presenting with wrist pain". Ages, day counts and doses all
+# start a parameter with a number, so the class was eating real content. The
+# separator and the space are what make this a marker rather than a value.
+_LIST_MARKER = re.compile(r"^(?:[-–—•*]+|\(?\d{1,2}[.)])\s+")
+
+
 def _clean(value: Any) -> str:
     """Trim a proposal down to a parameter, or nothing."""
     text = " ".join(str(value).split())
-    # The model occasionally answers with the question rather than the variation.
-    text = text.lstrip("-•*0123456789.() ").strip()
+    # The model occasionally numbers or bullets its answers despite being told not to.
+    text = _LIST_MARKER.sub("", text, count=1).strip()
+    # And it occasionally answers with the question rather than the variation.
     if text.endswith("?"):
         return ""
     return text if _MIN_CHARS <= len(text) <= _MAX_CHARS else ""

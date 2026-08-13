@@ -21,7 +21,7 @@ from app.core.config import get_settings
 from app.core.constants import DopsRole, role_labels
 from app.data.axes import BY_ID as AXIS_BY_ID
 from app.data.axes import subject_class
-from app.data.bloom import DEFAULT_MARKS, PSYCHOMOTOR_ASSESSABLE
+from app.data.bloom import DEFAULT_MARKS, PSYCHOMOTOR_LEVELS
 from app.services.corti import CortiError
 from app.services.corti_templates import question_template, run_template
 
@@ -73,12 +73,13 @@ _FALLBACK_AFFECTIVE = {
 
 # Psychomotor follows the ROLE, not the axis: what someone's hands were doing is
 # a fact about their part in the case, and the axis only changes what is asked
-# about it. Capped at the three preparatory levels — see PSYCHOMOTOR_ASSESSABLE.
+# about it. The whole of Simpson's taxonomy is available, so each role can sit
+# where it actually belongs rather than being flattened into the low three.
 _FALLBACK_PSYCHOMOTOR: dict[str, str] = {
-    DopsRole.OBSERVED: "Perception",       # watching, and reading the patient
-    DopsRole.SUPERVISED: "Guided response",  # doing it under direction
-    DopsRole.INDEPENDENT: "Guided response",
-    DopsRole.SUPERVISOR: "Set",            # readiness — knowing when to step in
+    DopsRole.OBSERVED: "Perception",            # watching, and reading the patient
+    DopsRole.SUPERVISED: "Guided response",     # doing it under direction
+    DopsRole.INDEPENDENT: "Mechanism",          # habitual and confident, unaided
+    DopsRole.SUPERVISOR: "Adaptation",          # altering the approach as it ran
     DopsRole.TOPIC: "Perception",
 }
 
@@ -272,7 +273,7 @@ async def generate_questions(
             # on a real patient, not from an answer. Anything outside the three
             # falls back to what the role implies.
             "psychomotor": fields.get(f"q{index}_psychomotor")
-            if fields.get(f"q{index}_psychomotor") in PSYCHOMOTOR_ASSESSABLE
+            if fields.get(f"q{index}_psychomotor") in PSYCHOMOTOR_LEVELS
             else default_psychomotor(entry),
             "marks": int(slot.get("marks") or DEFAULT_MARKS),
             "critical": bool(slot.get("critical")),

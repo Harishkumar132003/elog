@@ -8,11 +8,18 @@ import './builder.css'
 
 const DEFAULT_MARKS = 10
 
-// The two closed Bloom lists, and the three psychomotor levels a written answer
-// can reach — Mechanism and above describe performed skill.
+// The three closed taxonomies, lowest to highest. Mirrors app/data/bloom.py.
 const COGNITIVE = ['Remember', 'Understand', 'Apply', 'Analyse', 'Evaluate', 'Create']
 const AFFECTIVE = ['Receiving', 'Responding', 'Valuing', 'Organising', 'Characterising']
-const PSYCHOMOTOR = ['Perception', 'Set', 'Guided response']
+const PSYCHOMOTOR = [
+  'Perception',
+  'Set',
+  'Guided response',
+  'Mechanism',
+  'Complex overt response',
+  'Adaptation',
+  'Origination',
+]
 
 interface Props {
   entryId: string
