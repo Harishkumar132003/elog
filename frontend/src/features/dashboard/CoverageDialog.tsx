@@ -51,7 +51,7 @@ export function CoverageDialog({ row, onClose }: { row: CoverageRow; onClose: ()
             <h2 id="coverage-dialog-title">{row.subject}</h2>
             <p>
               {row.total === 0
-                ? 'No competencies set up for this subject yet.'
+                ? 'No competencies set up for this speciality yet.'
                 : `${row.covered} of ${row.total} competencies have evidence`}
             </p>
           </div>
@@ -124,7 +124,7 @@ export function CoverageDialog({ row, onClose }: { row: CoverageRow; onClose: ()
 
           {logged.length === 0 && row.gaps.length === 0 && (
             <p className="dialog-note">
-              This subject has no competencies set up. Load its curriculum in Configuration.
+              This speciality has no competencies set up. Load its curriculum in Configuration.
             </p>
           )}
         </div>

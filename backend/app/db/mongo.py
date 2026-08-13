@@ -76,7 +76,18 @@ def users() -> AsyncIOMotorCollection:
     return get_db()["users"]
 
 
+def cases() -> AsyncIOMotorCollection:
+    """The shared clinical facts and the roster of who worked the case.
+
+    One case, many logs: each participant's own account of it is an `entries`
+    document carrying this case's `_id`.
+    """
+    return get_db()["cases"]
+
+
 def entries() -> AsyncIOMotorCollection:
+    """One participant's log. Still called `entries` because it is unchanged —
+    every stage after it (certification, exercise, attempt) keys on `entry_id`."""
     return get_db()["entries"]
 
 
@@ -114,6 +125,17 @@ async def _ensure_indexes(db: AsyncIOMotorDatabase) -> None:
     await db["entries"].create_index([("professor_id", ASCENDING), ("created_at", DESCENDING)])
     await db["entries"].create_index([("competency_id", ASCENDING)])
 
+    # A case lists by who was in it; its logs read together, in role order.
+    await db["cases"].create_index([("participants.user_id", ASCENDING), ("created_at", DESCENDING)])
+    await db["entries"].create_index([("case_id", ASCENDING)])
+    # One log per participant per case. Partial, because entries predating cases
+    # have no `case_id` and would otherwise all collide on null.
+    await db["entries"].create_index(
+        [("case_id", ASCENDING), ("resident_id", ASCENDING)],
+        unique=True,
+        partialFilterExpression={"case_id": {"$exists": True}},
+    )
+
     # One certification and one exercise per entry; many attempts.
     await db["certifications"].create_index([("entry_id", ASCENDING)], unique=True)
     await db["exercises"].create_index([("entry_id", ASCENDING)], unique=True)
@@ -145,7 +167,7 @@ def serialize(document: dict[str, Any] | None) -> dict[str, Any] | None:
     out = dict(document)
     if "_id" in out:
         out["id"] = str(out.pop("_id"))
-    for key in ("resident_id", "professor_id", "entry_id", "exercise_id"):
+    for key in ("resident_id", "professor_id", "entry_id", "exercise_id", "case_id", "created_by"):
         if out.get(key) is not None:
             out[key] = str(out[key])
     return out

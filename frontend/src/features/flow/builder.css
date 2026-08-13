@@ -1,0 +1,366 @@
+/* The question builder: writing the next question. The set itself is read on
+   the exercise page, so nothing here lists it. */
+
+.builder {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.builder-lede {
+  margin: 8px 0 0;
+  font-size: var(--t-small);
+  color: var(--ink-3);
+  max-width: 70ch;
+}
+
+.builder-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  flex-wrap: wrap;
+}
+
+/* ── what this person logged ───────────────────────────────────────────── */
+
+/* `.card` carries only the border, radius and surface — the padding is each
+   screen's own, or the content sits on the border. */
+.builder-source {
+  padding: 20px 24px 22px;
+  background: var(--surface-sunk);
+  border-style: dashed;
+}
+
+.builder-source .eyebrow {
+  display: block;
+  margin-bottom: 7px;
+}
+
+.builder-source p.prose {
+  margin: 0;
+  font-size: var(--t-body);
+  line-height: 1.62;
+  color: var(--ink-2);
+}
+
+.builder-competency {
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: var(--t-tiny);
+  font-weight: 600;
+  color: var(--accent-deep);
+}
+
+/* ── the card being written ────────────────────────────────────────────── */
+
+.builder-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 22px 26px 24px;
+  border-color: var(--accent-line);
+  box-shadow: var(--shadow-sm);
+}
+
+.builder-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.builder-number {
+  font-size: var(--t-h3);
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+.builder-nudge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--t-tiny);
+  color: var(--accent-deep);
+}
+
+.builder-field {
+  display: block;
+}
+
+.builder-field .field-label {
+  display: block;
+  margin-bottom: 7px;
+}
+
+.builder-hint {
+  margin: 7px 0 0;
+  font-size: var(--t-tiny);
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+
+/* The parameter row: a text field with the AI button inside its right edge, so
+   the suggestion belongs to this box rather than floating beside it. */
+.builder-param {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.builder-input {
+  width: 100%;
+  padding: 11px 46px 11px 13px;
+  border: 1px solid var(--line-firm);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  font: inherit;
+  font-size: var(--t-body);
+  color: var(--ink);
+}
+
+.builder-input::placeholder {
+  color: var(--ink-3);
+}
+
+.builder-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--glow);
+}
+
+.builder-input:disabled {
+  background: var(--surface-sunk);
+  color: var(--ink-3);
+}
+
+.param-suggest {
+  position: absolute;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--r-xs);
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  cursor: pointer;
+  transition: background 0.14s var(--ease);
+}
+
+.param-suggest:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.param-suggest:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── marks, critical, generate ─────────────────────────────────────────── */
+
+.builder-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+
+.builder-marks {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 92px;
+}
+
+.builder-marks input {
+  padding: 10px 12px;
+  border: 1px solid var(--line-firm);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  font: inherit;
+  font-size: var(--t-body);
+  color: var(--ink);
+}
+
+.builder-marks input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--glow);
+}
+
+.builder-critical {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 15px;
+  border: 1px solid var(--line-firm);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  font-size: var(--t-small);
+  font-weight: 550;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: all 0.14s var(--ease);
+}
+
+.builder-critical:hover {
+  border-color: var(--alert);
+  color: var(--alert);
+}
+
+.builder-critical.is-on {
+  border-color: var(--alert);
+  background: var(--alert);
+  color: #fff;
+}
+
+.builder-generate {
+  margin-left: auto;
+}
+
+/* ── the draft: generated, not yet kept ────────────────────────────────── */
+
+/* Visually separated from the fields above it, because it is a different kind
+   of thing — output to read rather than input to fill. */
+.builder-draft {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 4px;
+  padding: 18px 20px 20px;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--r-md);
+  background: var(--accent-soft);
+}
+
+.builder-draft-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.builder-draft-head .eyebrow {
+  color: var(--accent-deep);
+}
+
+.builder-draft-axis {
+  font-size: var(--t-tiny);
+  font-weight: 650;
+  color: var(--accent-deep);
+}
+
+/* The question itself, editable in place — no separate "edit" mode to enter,
+   because reading and correcting are the same act here. */
+.builder-draft-text {
+  width: 100%;
+  padding: 13px 15px;
+  border: 1px solid var(--line-firm);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  font: inherit;
+  font-size: var(--t-read);
+  line-height: 1.6;
+  color: var(--ink);
+  resize: vertical;
+  min-height: 96px;
+}
+
+.builder-draft-text:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--glow);
+}
+
+.builder-draft-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.builder-draft-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 138px;
+}
+
+.builder-draft-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.builder-hint.is-warn {
+  color: var(--alert);
+}
+
+/* Flex, so the icon sits beside the text — which means the text must be a
+   single wrapped child, not loose inline nodes. See the spans in the markup. */
+.builder-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 11px 14px;
+  border-radius: var(--r-sm);
+  background: var(--surface-sunk);
+  font-size: var(--t-tiny);
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+.builder-note svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+.builder-note.is-warn {
+  margin-top: 14px;
+  background: color-mix(in srgb, var(--alert) 8%, transparent);
+  color: var(--alert);
+}
+
+/* ── released ──────────────────────────────────────────────────────────── */
+
+.builder-released {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 20px 24px 22px;
+  border-color: var(--ok);
+  background: color-mix(in srgb, var(--ok) 6%, var(--surface));
+  color: var(--ok);
+}
+
+.builder-released strong {
+  display: block;
+  font-size: var(--t-body);
+}
+
+.builder-released p {
+  margin: 4px 0 0;
+  font-size: var(--t-small);
+  color: var(--ink-3);
+}
+
+@media (max-width: 720px) {
+  .builder-generate {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -1,0 +1,236 @@
+/* The top bar: brand on the left, who-you-are on the right.
+
+   It spans the whole width above both the rail and the page, because identity
+   is not part of either — it is the frame both sit inside. */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  height: 64px;
+  padding: 0 24px;
+}
+
+/* ── brand ─────────────────────────────────────────────────────────────── */
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.topbar-mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: var(--r-sm);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+  font-size: var(--t-body);
+  letter-spacing: -0.02em;
+}
+
+.topbar-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.topbar-brand-text strong {
+  font-size: var(--t-body);
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+.topbar-brand-text small {
+  font-size: var(--t-micro);
+  color: var(--ink-3);
+}
+
+/* ── identity ──────────────────────────────────────────────────────────── */
+
+.topbar-identity {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-label {
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.identity-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 6px 6px;
+  border: 1px solid var(--line-firm);
+  border-radius: 999px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
+}
+
+.identity-trigger:hover {
+  border-color: var(--accent);
+}
+
+.identity-trigger:focus-visible,
+.identity-trigger.is-open {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--glow);
+}
+
+.identity-avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.identity-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.25;
+  text-align: left;
+  min-width: 0;
+}
+
+.identity-text strong {
+  font-size: var(--t-small);
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.identity-text small {
+  font-size: var(--t-micro);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.identity-caret {
+  flex: none;
+  color: var(--ink-3);
+  transition: transform 0.15s var(--ease);
+}
+
+.identity-trigger.is-open .identity-caret {
+  transform: rotate(180deg);
+}
+
+/* ── the menu ──────────────────────────────────────────────────────────── */
+
+.identity-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 50;
+  width: 330px;
+  max-width: calc(100vw - 32px);
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.identity-menu-head {
+  margin: 0;
+  padding: 8px 10px 10px;
+  font-size: var(--t-micro);
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--line);
+}
+
+.identity-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  margin-top: 2px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s var(--ease);
+}
+
+.identity-option:hover:not(:disabled) {
+  background: var(--surface-sunk);
+}
+
+.identity-option:disabled {
+  cursor: progress;
+  opacity: 0.55;
+}
+
+/* The one you already are. A filled avatar rather than a tick, so the current
+   identity reads at a glance from the same spot the trigger shows it. */
+.identity-option.is-on {
+  background: var(--accent-soft);
+}
+
+.identity-option.is-on .identity-avatar {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.identity-option.is-on .identity-text strong {
+  color: var(--accent-deep);
+}
+
+.identity-text small {
+  white-space: normal;
+}
+
+.identity-busy {
+  margin-left: auto;
+  color: var(--ink-3);
+}
+
+@media (max-width: 620px) {
+  .topbar-inner {
+    padding: 0 14px;
+  }
+
+  .topbar-label,
+  .topbar-brand-text small {
+    display: none;
+  }
+
+  .identity-trigger .identity-text {
+    display: none;
+  }
+}

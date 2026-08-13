@@ -67,14 +67,40 @@ def require_role(*allowed: Role):
 CurrentResident = Annotated[dict[str, Any], Depends(require_role(Role.RESIDENT))]
 CurrentProfessor = Annotated[dict[str, Any], Depends(require_role(Role.PROFESSOR))]
 
+# Everyone who works a case: the four DOPS identities, i.e. everyone but the
+# professor. The same dependency as CurrentResident, named for what it gates.
+CurrentParticipant = CurrentResident
+
 
 def entry_filter_for(user: dict[str, Any]) -> dict[str, Any]:
     """The only entries this user is allowed to see.
 
-    A resident sees their own; a professor sees those of the residents they own.
-    Applied as a query filter rather than a post-fetch check, so an unauthorised
-    document is never loaded in the first place.
+    A participant sees their own logs; the professor sees every log.
+
+    The professor's half used to be `professor_id == them`, which was right when
+    residents were assigned to a supervisor. There is one professor now, so that
+    filter distinguishes nothing — and it silently orphaned every log written
+    before the fixed identities existed, because those carry the id of a
+    professor account nobody can sign in as any more.
+
+    Still applied as a query filter rather than a post-fetch check, so a log
+    outside the caller's scope is never loaded in the first place.
     """
     if user["role"] == Role.PROFESSOR.value:
-        return {"professor_id": ObjectId(user["id"])}
+        return {}
     return {"resident_id": ObjectId(user["id"])}
+
+
+def case_filter_for(user: dict[str, Any]) -> dict[str, Any]:
+    """The only cases this user is allowed to see.
+
+    A professor sees every case; anyone else sees the cases they were in.
+
+    This gates the *case* — its shared clinical facts and its roster. It does
+    not gate the logs written against it: a participant reads only their own,
+    which `list_logs` and the shaped roster enforce separately. Their account is
+    what each of them is assessed on, so it does not travel sideways.
+    """
+    if user["role"] == Role.PROFESSOR.value:
+        return {}
+    return {"participants.user_id": ObjectId(user["id"])}

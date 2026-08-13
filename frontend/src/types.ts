@@ -6,7 +6,7 @@ export type Subject =
   | 'Physiology'
 
 export type SubjectClass = 'clinical' | 'para-clinical' | 'pre-clinical'
-export type DopsRole = 'observed' | 'supervised' | 'independent' | 'topic'
+export type DopsRole = 'observed' | 'supervised' | 'independent' | 'supervisor' | 'topic'
 export type UserRole = 'resident' | 'professor'
 export type EntryStatus = 'logged' | 'certified' | 'released' | 'answered'
 
@@ -15,9 +15,21 @@ export interface AuthUser {
   email: string
   name: string
   role: UserRole
+  /** Which of the five identities this is. Null for the professor, who never
+   *  works a case. */
+  dops_role: DopsRole | null
   professor_id: string | null
   department: string | null
   year: number | null
+}
+
+/** One entry in the header's dropdown. There is no sign-in: name and role are
+ *  the same thing, so choosing a role chooses the person. */
+export interface Identity {
+  key: string
+  name: string
+  role: UserRole
+  dops_role: DopsRole | null
 }
 
 export interface Competency {
@@ -124,6 +136,11 @@ export interface Entry {
   id: string
   resident_id: string
   professor_id: string | null
+  /** Set when this entry is one participant's log of a shared case. Absent on
+   *  entries written before cases existed, which still open exactly as before. */
+  case_id?: string | null
+  /** When the participant actually wrote it — not when the case was created. */
+  logged_at?: string | null
   subject: Subject
   narrative: string
   role: DopsRole
@@ -156,6 +173,53 @@ export interface EntryPage {
   total: number
   limit: number
   offset: number
+}
+
+/* ── cases ─────────────────────────────────────────────────────────────── */
+
+/** One person on a case, and how far their own log has got. */
+export interface Participant {
+  role: DopsRole
+  role_label: string
+  user_id: string
+  name: string
+  is_creator: boolean
+
+  /** Roster — everyone on the case sees whether the others have logged. */
+  has_logged: boolean
+  logged_at: string | null
+
+  /** Only present for the professor, and for each person on their own row.
+   *  A participant never receives another participant's `entry_id`, so there is
+   *  nothing for them to open. */
+  entry_id: string | null
+  status: EntryStatus | null
+  questions: number
+  released: boolean
+}
+
+/** The clinical facts everyone in the room shares. Each participant's own
+ *  account of it is a separate `Entry`. */
+export interface Case {
+  id: string
+  subject: Subject
+  subject_class: SubjectClass
+  narrative: string
+  competency_id: string | null
+  competency_title: string | null
+  confirmed: boolean
+  source: string
+  parse_edited: boolean
+  diagnosis: string | null
+  procedure: string | null
+  patient_age: number | null
+  patient_sex: string | null
+  created_by: string
+  created_role: DopsRole
+  created_at: string
+  participants: Participant[]
+  /** Only the detail endpoint returns the full parse. */
+  parsed?: Parsed
 }
 
 /* ── screens 2 & 3 ─────────────────────────────────────────────────────── */

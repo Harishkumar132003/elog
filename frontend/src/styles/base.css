@@ -139,6 +139,26 @@ ol {
   color: var(--ink-2);
 }
 
+/* A compact button, for controls that live inside a card rather than ending a
+   form. Declared after the variants so it wins on height and padding whichever
+   one it is combined with — it was being used in seven places before it
+   existed, which is why those controls were rendering full size. */
+.btn-sm {
+  height: 30px;
+  gap: 6px;
+  padding: 0 12px;
+  font-size: var(--t-micro);
+  border-radius: var(--r-xs);
+}
+
+/* Destructive intent, shown on hover rather than at rest: the control should
+   not shout until it is about to be used. */
+.btn.is-danger:hover:not(:disabled) {
+  border-color: var(--alert);
+  background: color-mix(in srgb, var(--alert) 8%, transparent);
+  color: var(--alert);
+}
+
 .btn-quiet:hover:not(:disabled) {
   border-color: var(--ink);
   color: var(--ink);

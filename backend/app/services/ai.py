@@ -105,7 +105,7 @@ async def _merge(result: dict[str, Any], fields: dict[str, Any], subject: str) -
         result["competency"] = picked
         result["confidence"] = 0.9
 
-    result["source"] = "corti"
+    result["source"] = _settings.ai_provider
     return result
 
 

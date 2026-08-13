@@ -229,6 +229,15 @@ ROLE_FAMILIES: dict[DopsRole, tuple[Family, ...]] = {
         Family.COURSE,
         Family.UNCERTAINTY,
     ),
+    # "The oversight decision" — a supervisor is accountable for the whole case,
+    # including how it went afterwards, so they get the widest set.
+    DopsRole.SUPERVISOR: (
+        Family.PATIENT,
+        Family.PRESENTATION,
+        Family.CONTEXT,
+        Family.COURSE,
+        Family.UNCERTAINTY,
+    ),
     # Pre-clinical: no role levels, and no patient in the case at all.
     DopsRole.TOPIC: (Family.CONCEPT,),
 }

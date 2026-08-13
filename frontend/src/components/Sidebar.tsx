@@ -2,7 +2,7 @@ import { memo } from 'react'
 import { NavLink } from 'react-router-dom'
 
 import type { AuthUser, UserRole } from '../types'
-import { BookIcon, ChartIcon, GearIcon, GridIcon, NodeIcon, PenIcon, SlidersIcon } from './icons'
+import { BookIcon, ChartIcon, GridIcon, NodeIcon, PenIcon, SlidersIcon } from './icons'
 import './sidebar.css'
 
 interface NavItem {
@@ -23,24 +23,17 @@ interface NavGroup {
 /** Built but not exposed — set true to bring the weekly meter back. */
 const SHOW_WEEKLY_METER = false
 
-const initials = (name: string) =>
-  name
-    .replace(/^(Dr|Prof)\.?\s+/i, '')
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-
 interface SidebarProps {
   user: AuthUser
-  onLogout: () => void
   logged: number
   target: number
+  /** Logs waiting on the professor to write questions. */
   awaiting: number
+  /** Exercises released to this participant and not yet answered. */
+  pending: number
 }
 
-function SidebarBase({ user, onLogout, logged, target, awaiting }: SidebarProps) {
+function SidebarBase({ user, logged, target, awaiting, pending }: SidebarProps) {
   const isResident = user.role === 'resident'
   const pct = Math.min(100, Math.round((logged / target) * 100))
 
@@ -49,7 +42,14 @@ function SidebarBase({ user, onLogout, logged, target, awaiting }: SidebarProps)
       title: isResident ? 'Logbook' : 'Supervision',
       shown: true,
       items: [
-        { to: '/new', label: 'New entry', icon: PenIcon, roles: ['resident'] },
+        { to: '/cases/new', label: 'New case', icon: PenIcon, roles: ['resident'] },
+        {
+          to: '/to-answer',
+          label: 'To answer',
+          icon: NodeIcon,
+          roles: ['resident'],
+          badge: pending || undefined,
+        },
         { to: '/dashboard', label: 'Dashboard', icon: ChartIcon, roles: ['professor'] },
         { to: '/residents', label: 'My residents', icon: GridIcon, roles: ['professor'] },
         {
@@ -94,16 +94,7 @@ function SidebarBase({ user, onLogout, logged, target, awaiting }: SidebarProps)
 
   return (
     <aside className="rail">
-      <div className="rail-brand">
-        <span className="rail-mark" aria-hidden>
-          O
-        </span>
-        <span className="rail-brand-text">
-          <strong>OpBook360</strong>
-          <small>Formative reasoning</small>
-        </span>
-      </div>
-
+      {/* The brand lives in the header now — the rail starts at the nav. */}
       <nav className="rail-nav" aria-label="Main">
         {groups.map((group) => (
           <div className="rail-group" key={group.title}>
@@ -141,32 +132,8 @@ function SidebarBase({ user, onLogout, logged, target, awaiting }: SidebarProps)
         </div>
       )}
 
-      <div className="rail-foot">
-        <NavLink
-          to="/settings"
-          className={({ isActive }) => `rail-item${isActive ? ' is-active' : ''}`}
-        >
-          <GearIcon className="rail-icon" />
-          <span>Settings</span>
-        </NavLink>
-
-        <div className="rail-user">
-          <span className="rail-avatar" aria-hidden>
-            {initials(user.name)}
-          </span>
-          <span className="rail-user-text">
-            <strong>{user.name}</strong>
-            <small>
-              {isResident
-                ? `Year ${user.year ?? '—'} · ${user.department ?? ''}`
-                : (user.department ?? 'Faculty')}
-            </small>
-          </span>
-          <button type="button" className="rail-signout" onClick={onLogout} title="Sign out">
-            Exit
-          </button>
-        </div>
-      </div>
+      {/* No sign-out and no user card: identity is the header's dropdown, and
+          there is nothing to sign out of. */}
     </aside>
   )
 }

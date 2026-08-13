@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { AiIcon, ArrowIcon, CheckIcon } from '../../components/icons'
-import { createEntry, getCompetencies, getSubjects, parseEntryStream } from '../../lib/entries'
-import { Dictation, canDictate } from './Dictation'
-import { TranscribeLoader } from './TranscribeLoader'
-import type { Analysis, Competency, DopsRole, Entry, Subject, SubjectMeta } from '../../types'
-import './entry.css'
+import { Dictation, canDictate } from '../entry/Dictation'
+import { TranscribeLoader } from '../entry/TranscribeLoader'
+import { createCase, listRoles } from '../../lib/cases'
+import { getCompetencies, getSubjects, parseEntryStream } from '../../lib/entries'
+import { useAuth } from '../../lib/auth'
+import type { Analysis, Case, Competency, DopsRole, Subject, SubjectMeta } from '../../types'
+import '../entry/entry.css'
+import './case.css'
 
 const MIN_CHARS = 20
 /** Mirrors `max_narrative_chars` on the server. */
@@ -15,28 +18,39 @@ const PLACEHOLDER: Record<string, string> = {
   clinical:
     'e.g. 55F, fall on outstretched hand. Intra-articular distal radius fracture. Closed reduction attempted, unsatisfactory. Proceeded to ORIF with volar locking plate.',
   'para-clinical':
-    'e.g. Core biopsy, breast lump, 45F — reported. Reviewed the slides with the consultant.',
+    'e.g. Core biopsy, breast lump, 45F — reported with the consultant.',
   'pre-clinical': 'e.g. Tutorial on acid-base regulation and compensation.',
 }
 
-export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
+interface RoleOption {
+  key: string
+  name: string
+  dops_role: DopsRole
+}
+
+/** Screen 1 · the case everyone in the room shares.
+ *
+ *  This is deliberately NOT anyone's log. It is the clinical facts — what
+ *  happened, to whom, under which competency — and the roster of who was there.
+ *  Each participant, including whoever creates it, writes their own account
+ *  afterwards on the case page. */
+export function NewCase({ onCreated }: { onCreated: (record: Case) => void }) {
+  const { user } = useAuth()
+
   const [subjects, setSubjects] = useState<SubjectMeta[]>([])
   const [subject, setSubject] = useState<Subject>('Orthopaedics')
   const [narrative, setNarrative] = useState('')
-  const [role, setRole] = useState<DopsRole>('supervised')
+
+  const [roles, setRoles] = useState<RoleOption[]>([])
+  const [invited, setInvited] = useState<DopsRole[]>([])
 
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [analysing, setAnalysing] = useState(false)
-  /** Seconds the AI has been working; shown once the wait is noticeable. */
   const [waiting, setWaiting] = useState(0)
-  /** Set while a recording is being transcribed; carries the clip's length so
-   *  the loader can count against it. */
   const [transcribing, setTranscribing] = useState<{ seconds: number } | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // The parse is a proposal, not a verdict — the resident can correct it here,
-  // and the corrected version is what the reasoning exercise is built from.
   const [editing, setEditing] = useState(false)
   const [fix, setFix] = useState<{
     diagnosis: string
@@ -45,18 +59,17 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
     sex: string
   } | null>(null)
 
-  // The subject's competencies, and the one this case is being logged against.
-  // The AI proposes; this is what actually gets saved.
   const [competencies, setCompetencies] = useState<Competency[]>([])
   const [competencyId, setCompetencyId] = useState<string>('')
 
-  // What the current analysis was produced from, so pressing Analyse twice on
-  // unchanged text does not spend another AI call.
   const analysedFor = useRef<string | null>(null)
   const textarea = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     getSubjects().then(setSubjects).catch(() => undefined)
+    listRoles()
+      .then((items) => setRoles(items.map(({ key, name, dops_role }) => ({ key, name, dops_role }))))
+      .catch(() => setRoles([]))
   }, [])
 
   useEffect(() => {
@@ -72,12 +85,6 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
   const meta = useMemo(() => subjects.find((item) => item.value === subject), [subjects, subject])
 
   useEffect(() => {
-    if (!meta) return
-    const allowed = meta.roles.map((option) => option.value)
-    if (!allowed.includes(role)) setRole(allowed.includes('supervised') ? 'supervised' : allowed[0])
-  }, [meta, role])
-
-  useEffect(() => {
     const node = textarea.current
     if (!node) return
     node.style.height = 'auto'
@@ -90,6 +97,9 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
   const key = `${subject}::${trimmed}`
   const reviewing = analysis !== null && analysedFor.current === key
 
+  // You are always on your own case, so your row is shown but never offered.
+  const others = roles.filter((option) => option.dops_role !== user?.dops_role)
+
   const analyse = useCallback(async () => {
     if (!ready || analysing) return
     if (analysedFor.current === key && analysis) return // nothing changed
@@ -97,9 +107,12 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
     setWaiting(0)
     setError(null)
 
-    // Only the fields the resident has not touched follow the parse. Once they
-    // have corrected something, the AI arriving late must not overwrite it.
-    const adopt = (result: Analysis) => {
+    try {
+      // The rules read lands in a tenth of a second and the AI's a few seconds
+      // later, but this screen waits for the finished answer — opening early
+      // meant values changing under the person checking them.
+      const result = await parseEntryStream(subject, trimmed, { onWaiting: setWaiting })
+      analysedFor.current = key
       setAnalysis(result)
       setFix({
         diagnosis: result.parsed.diagnosis?.display ?? '',
@@ -107,38 +120,21 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
         age: result.parsed.patient?.age ? String(result.parsed.patient.age) : '',
         sex: result.parsed.patient?.sex ?? '',
       })
-    }
-
-    try {
-      // The rules read lands in a tenth of a second and the AI's a few seconds
-      // later, but the review screen waits for the finished answer. Opening it
-      // early meant the resident began checking values that then changed under
-      // them, which reads as the app correcting its own mistake.
-      const result = await parseEntryStream(subject, trimmed, { onWaiting: setWaiting })
-      analysedFor.current = key
-      adopt(result)
-      // The AI's pick seeds the dropdown; with one competency there is nothing to
-      // choose and the fallback picks it anyway.
       setCompetencyId(result.competency?.id ?? (competencies.length === 1 ? competencies[0].id : ''))
       setEditing(false)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not read this entry')
+      setError(cause instanceof Error ? cause.message : 'Could not read this case')
     } finally {
       setAnalysing(false)
       setWaiting(0)
     }
   }, [ready, analysing, key, analysis, subject, trimmed, competencies])
 
-  /** Dictation adds to the case, it does not take it over.
-   *  The resident may have typed first, and a recording is one more paragraph. */
+  /** Dictation adds to the case, it does not take it over. */
   const appendDictated = useCallback((text: string) => {
     setNarrative((current) => {
       const joined = current.trim() ? `${current.trimEnd()} ${text}` : text
-      // The server caps the narrative too, but stopping here means the resident
-      // sees the limit instead of silently losing the end of what they said.
-      return joined.length > MAX_NARRATIVE
-        ? joined.slice(0, MAX_NARRATIVE).trimEnd()
-        : joined
+      return joined.length > MAX_NARRATIVE ? joined.slice(0, MAX_NARRATIVE).trimEnd() : joined
     })
     textarea.current?.focus()
   }, [])
@@ -149,17 +145,23 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
     [],
   )
 
+  const toggle = useCallback((role: DopsRole) => {
+    setInvited((current) =>
+      current.includes(role) ? current.filter((item) => item !== role) : [...current, role],
+    )
+  }, [])
+
   const save = useCallback(async () => {
     if (!reviewing || saving) return
     if (competencies.length > 1 && !competencyId) return
     setSaving(true)
     setError(null)
     try {
-      onSaved(
-        await createEntry({
+      onCreated(
+        await createCase({
           subject,
           narrative: trimmed,
-          role,
+          participants: invited,
           confirmed: true,
           ...(competencyId ? { competency_id: competencyId } : {}),
           ...(fix
@@ -173,10 +175,10 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
         }),
       )
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not save this entry')
+      setError(cause instanceof Error ? cause.message : 'Could not create this case')
       setSaving(false)
     }
-  }, [reviewing, saving, subject, trimmed, role, fix, competencyId, competencies.length, onSaved])
+  }, [reviewing, saving, subject, trimmed, invited, fix, competencyId, competencies.length, onCreated])
 
   const parsed = analysis?.parsed
   const aiPicked = analysis?.competency != null && analysis.competency.id === competencyId
@@ -189,8 +191,8 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
           <span className="eyebrow">Step 2 of 2 · check the reading</span>
           <h1 className="entry-title">Is this what you meant?</h1>
           <p className="entry-lede">
-            Everything below was read from your entry. Correct anything that is wrong —
-            the competency and these fields are what the reasoning exercise is built from.
+            Everything below was read from the case. Correct anything that is wrong — these
+            fields are shared by everyone who logs against it.
           </p>
         </header>
 
@@ -198,14 +200,9 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
           <div className="review-competency">
             <span className="review-badge">
               <AiIcon width={13} height={13} />
-              {aiPicked && analysis.source === 'corti'
-                ? 'Competency identified by AI'
-                : 'Competency'}
+              {aiPicked && analysis.source === 'corti' ? 'Competency identified by AI' : 'Competency'}
             </span>
 
-            {/* A subject holds dozens of competencies once a curriculum is loaded,
-                so the AI's pick is a proposal the resident confirms — the same
-                gesture as correcting the diagnosis below. */}
             {competencies.length > 1 ? (
               <>
                 <select
@@ -223,24 +220,20 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
                 </select>
                 <p className="review-competency-hint">
                   {competencyId
-                    ? 'The whole reasoning exercise is built on this. Change it if it is wrong.'
+                    ? 'Every reasoning exercise on this case is built on it. Change it if it is wrong.'
                     : 'Pick the competency this case is evidence for.'}
                 </p>
               </>
             ) : (
               <h2 className="prose">
-                {competencies[0]?.title ?? 'No competency set up for this subject yet'}
+                {competencies[0]?.title ?? 'No competency set up for this speciality yet'}
               </h2>
             )}
           </div>
 
           <div className="review-fields-head">
-            <span className="eyebrow">Fields read from your entry</span>
-            <button
-              type="button"
-              className="btn btn-quiet"
-              onClick={() => setEditing((on) => !on)}
-            >
+            <span className="eyebrow">Fields read from the case</span>
+            <button type="button" className="btn btn-quiet" onClick={() => setEditing((on) => !on)}>
               {editing ? 'Done' : 'Correct these'}
             </button>
           </div>
@@ -292,8 +285,8 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
               </div>
 
               <p className="edit-note">
-                Corrections are saved with the case, and the reasoning exercise is built
-                from the corrected version.
+                Corrections are saved with the case, and every reasoning exercise built on it
+                uses the corrected version.
               </p>
             </div>
           ) : (
@@ -308,7 +301,12 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
                       ? [fix.age, fix.sex].filter(Boolean).join(' · ')
                       : parsed?.patient?.display,
                   ],
-                  ['Your role', meta?.roles.find((r) => r.value === role)?.label],
+                  [
+                    'In the room',
+                    [user?.name, ...invited.map((r) => roles.find((o) => o.dops_role === r)?.name)]
+                      .filter(Boolean)
+                      .join(' · '),
+                  ],
                 ] as const
               ).map(([label, value]) => (
                 <div key={label}>
@@ -322,8 +320,8 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
           {parsed && parsed.omissions.length > 0 && (
             <div className="review-gaps">
               <p>
-                <strong>You did not document these.</strong> That is not an error — the
-                reasoning exercise will ask you about them.
+                <strong>The case does not document these.</strong> That is not an error — the
+                reasoning exercises will ask about them.
               </p>
               <ul>
                 {parsed.omissions.map((omission) => (
@@ -350,13 +348,11 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
           <button
             type="button"
             className="btn btn-primary"
-            // Without a competency the case has nothing to be evidence *of*, and
-            // the whole exercise downstream is built from it.
             disabled={saving || (competencies.length > 1 && !competencyId)}
             onClick={save}
           >
             <CheckIcon width={16} height={16} />
-            {saving ? 'Saving…' : 'Confirm & save to logbook'}
+            {saving ? 'Creating…' : 'Create case'}
           </button>
         </div>
       </div>
@@ -367,20 +363,20 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
   return (
     <div className="entry">
       <header className="entry-head">
-        <span className="eyebrow">Step 1 of 2 · log the case</span>
-        <h1 className="entry-title">New logbook entry</h1>
+        <span className="eyebrow">Step 1 of 2 · the shared case</span>
+        <h1 className="entry-title">New case</h1>
         <p className="entry-lede">
-          Write the case as you would in your paper logbook. One case maps to one
-          competency, and the reasoning exercise is built from it.
+          Write what happened, as everyone in the room would recognise it. You and each person
+          you name add your own log afterwards — this is the case, not your account of it.
         </p>
       </header>
 
       <section className="card form">
         <div className="field-block">
           <label className="field-label" htmlFor="subject-tabs">
-            Subject
+            Speciality
           </label>
-          <div className="segmented" id="subject-tabs" role="radiogroup" aria-label="Subject">
+          <div className="segmented" id="subject-tabs" role="radiogroup" aria-label="Speciality">
             {subjects.map((item) => (
               <button
                 key={item.value}
@@ -397,33 +393,9 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
         </div>
 
         <div className="field-block">
-          <label className="field-label" htmlFor="role-group">
-            {meta?.subject_class === 'pre-clinical' ? 'Entry type' : 'Your role in this case'}
-          </label>
-          <div className="segmented" id="role-group" role="radiogroup" aria-label="Your role">
-            {(meta?.roles ?? []).map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                role="radio"
-                aria-checked={option.value === role}
-                className={`segment segment-role${option.value === role ? ' is-on' : ''}`}
-                onClick={() => setRole(option.value)}
-              >
-                <strong>{option.label}</strong>
-                <small>{option.hint}</small>
-              </button>
-            ))}
-          </div>
-          <p className="field-help">This decides which variation axes your professor is offered.</p>
-        </div>
-
-        <div className="field-block">
           <div className="field-label-row">
             <label className="field-label" htmlFor="narrative">
-              {meta?.subject_class === 'pre-clinical'
-                ? 'What did you study?'
-                : 'What did you do?'}
+              {meta?.subject_class === 'pre-clinical' ? 'What was studied?' : 'What happened?'}
             </label>
             {canDictate() && (
               <Dictation
@@ -434,8 +406,6 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
             )}
           </div>
 
-          {/* The textarea has no positioned parent of its own, so the loader
-              needs this wrapper to sit over it. */}
           <div className={`textbox-wrap${transcribing ? ' is-busy' : ''}`}>
             <textarea
               id="narrative"
@@ -444,9 +414,6 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
               value={narrative}
               placeholder={PLACEHOLDER[meta?.subject_class ?? 'clinical']}
               spellCheck
-              // readOnly rather than disabled: the resident's own typing stays
-              // legible behind the veil, and the field keeps its place in the
-              // accessibility tree.
               readOnly={transcribing !== null}
               aria-busy={transcribing !== null}
               onChange={(event) => setNarrative(event.target.value)}
@@ -458,12 +425,50 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
           </div>
           <div className="field-foot">
             <span className="field-help">
-              <strong>Free text, not a form.</strong> What you leave out is signal too.
+              <strong>Free text, not a form.</strong> What is left out is signal too.
             </span>
             <span className="field-count">
               {words} word{words === 1 ? '' : 's'}
             </span>
           </div>
+        </div>
+
+        <div className="field-block">
+          <label className="field-label" htmlFor="roster">
+            Who else worked on this case?
+          </label>
+          <div className="roster" id="roster">
+            <div className="roster-me">
+              <CheckIcon width={14} height={14} />
+              <span>
+                <strong>{user?.name}</strong>
+                <small>you — always on your own case</small>
+              </span>
+            </div>
+
+            {others.map((option) => {
+              const on = invited.includes(option.dops_role)
+              return (
+                <button
+                  key={option.key}
+                  type="button"
+                  role="checkbox"
+                  aria-checked={on}
+                  className={`roster-option${on ? ' is-on' : ''}`}
+                  onClick={() => toggle(option.dops_role)}
+                >
+                  <span className="roster-box" aria-hidden>
+                    {on && <CheckIcon width={12} height={12} />}
+                  </span>
+                  <span>{option.name}</span>
+                </button>
+              )
+            })}
+          </div>
+          <p className="field-help">
+            Each person named here can add their own log, and the professor writes a separate set
+            of questions for each of them. Leave it empty if you worked alone.
+          </p>
         </div>
       </section>
 
@@ -481,7 +486,11 @@ export function NewEntry({ onSaved }: { onSaved: (entry: Entry) => void }) {
           disabled={!ready || analysing}
           onClick={analyse}
         >
-          {analysing ? (waiting >= 3 ? `Checking with AI… ${Math.round(waiting)}s` : 'Reading your entry…') : 'Analyse entry'}
+          {analysing
+            ? waiting >= 3
+              ? `Checking with AI… ${Math.round(waiting)}s`
+              : 'Reading the case…'
+            : 'Analyse case'}
           {!analysing && <ArrowIcon width={16} height={16} />}
         </button>
       </div>

@@ -32,8 +32,15 @@ logger = logging.getLogger(__name__)
 _settings = get_settings()
 
 
-class CortiError(RuntimeError):
-    """Any failure talking to Corti. Callers are expected to fall back."""
+class AiError(RuntimeError):
+    """Any failure talking to a generation provider. Callers are expected to fall back."""
+
+
+# Every caller already catches `CortiError`, and there is now a second provider
+# that raises the same thing. Kept as an alias rather than renamed at six call
+# sites: the two names are one class, so an `except CortiError` catches an
+# OpenAI failure too.
+CortiError = AiError
 
 
 class CortiClient:

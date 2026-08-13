@@ -13,9 +13,11 @@ question, so a demo never dead-ends (§5.1).
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
+from app.core.config import get_settings
 from app.core.constants import DopsRole, role_labels
 from app.data.axes import BY_ID as AXIS_BY_ID
 from app.data.axes import subject_class
@@ -24,6 +26,7 @@ from app.services.corti import CortiError
 from app.services.corti_templates import question_template, run_template
 
 logger = logging.getLogger(__name__)
+_settings = get_settings()
 
 # §2 — the role changes the type of reasoning, never the difficulty.
 _ROLE_BRIEF: dict[str, str] = {
@@ -38,6 +41,11 @@ _ROLE_BRIEF: dict[str, str] = {
     DopsRole.INDEPENDENT: (
         "The resident did this unsupervised. Test the edges: complications, atypical "
         "courses and constraints."
+    ),
+    DopsRole.SUPERVISOR: (
+        "This person supervised someone else doing it. Test the oversight decision — "
+        "when to intervene, what was safe to delegate, and what they were watching "
+        "for. Not their own hands-on technique."
     ),
     DopsRole.TOPIC: (
         "This is a topic, not a patient. Test the concept itself and its applied "
@@ -62,6 +70,21 @@ _FALLBACK_AFFECTIVE = {
     "uncertainty": "Valuing",
     "concept": "Receiving",
 }
+
+
+def default_levels(axis_id: str) -> tuple[str, str]:
+    """The cognitive and affective levels an axis lands on when nothing says otherwise.
+
+    Used for a question the professor wrote or reworded themselves — the levels
+    are a property of the kind of variation being tested, so the axis can supply
+    them without asking the AI again.
+    """
+    axis = AXIS_BY_ID.get(axis_id) or {}
+    family = str(axis.get("family", ""))
+    return (
+        _FALLBACK_COGNITIVE.get(family, "Apply"),
+        _FALLBACK_AFFECTIVE.get(family, "Responding"),
+    )
 
 
 def certified_slots(certification: dict[str, Any]) -> list[dict[str, Any]]:
@@ -104,16 +127,23 @@ def case_context(entry: dict[str, Any]) -> str:
         "THE LOGGED CASE",
         f"Subject: {subject}",
         f"Competency: {entry.get('competency_title') or '—'}",
-        f"Resident's role: {role_label}",
+        f"This person's role: {role_label}",
         f"Diagnosis: {(parsed.get('diagnosis') or {}).get('display') or '—'}",
         f"Procedure: {(parsed.get('procedure') or {}).get('display') or '—'}",
         f"Patient: {(parsed.get('patient') or {}).get('display') or 'not a patient case'}",
-        "",
-        "The resident wrote:",
-        entry.get("narrative", ""),
-        "",
-        _ROLE_BRIEF.get(role, ""),
     ]
+
+    # A case worked by several people carries the shared account as well as this
+    # participant's own. Both matter: the shared half is what actually happened,
+    # their own half is what they saw of it and is what the questions must test.
+    shared = (entry.get("case_narrative") or "").strip()
+    if shared:
+        lines += ["", "WHAT HAPPENED (shared by everyone who was there):", shared]
+        lines += ["", f"WHAT THIS {role_label.upper()} WROTE:", entry.get("narrative", "")]
+    else:
+        lines += ["", "The resident wrote:", entry.get("narrative", "")]
+
+    lines += ["", _ROLE_BRIEF.get(role, "")]
     return "\n".join(lines)
 
 
@@ -236,4 +266,47 @@ async def generate_questions(
     for position, question in enumerate(ordered, start=1):
         question["id"] = position
 
-    return {"questions": ordered, "source": "corti"}
+    return {"questions": ordered, "source": _settings.ai_provider}
+
+
+async def generate_one(
+    entry: dict[str, Any], axis_id: str, parameter: str, marks: int, critical: bool
+) -> dict[str, Any] | None:
+    """One question, for the professor building a set a card at a time.
+
+    Same generator as the batch path, handed a one-slot certification — so it
+    uses `question_gen_1`, an already-provisioned template, and keeps the same
+    scripted fallback when Corti cannot be reached.
+
+    Wrapped in a ceiling because this blocks a request rather than streaming.
+    Cloudflare cuts an idle connection at 100s and our Corti HTTP timeout is
+    longer than that, so without this a hung call would become a 524 while the
+    server waited on. Timing out here returns the scripted question instead,
+    which the professor can reword — a worse question, but a live screen.
+    """
+    certification = {
+        "axes": [
+            {
+                "axis_id": axis_id,
+                "discriminates": True,
+                "parameters": [{"text": parameter, "marks": marks, "critical": critical}],
+            }
+        ]
+    }
+
+    try:
+        async with asyncio.timeout(_settings.question_timeout_seconds):
+            generated = await generate_questions(entry, certification)
+    except TimeoutError:
+        logger.warning(
+            "Corti took longer than %ss writing one question; using the scripted one",
+            _settings.question_timeout_seconds,
+        )
+        slots = certified_slots(certification)
+        scripted = _scripted(slots, entry)
+        generated = {"questions": list(scripted.values()), "source": "rules-fallback"}
+
+    questions = generated.get("questions") or []
+    if not questions:
+        return None
+    return {**questions[0], "source": generated.get("source", _settings.ai_provider)}

@@ -3,9 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { ArrowIcon } from '../../components/icons'
 import { getCase } from '../../lib/entries'
 import { EMPTY_PARSE, type Attempt, type AuthUser, type CandidateAxes, type Entry, type Exercise } from '../../types'
-import { CertifyPanel } from './CertifyPanel'
 import { ExerciseEditor } from './ExerciseEditor'
-import { ExercisePanel } from './ExercisePanel'
 import { ResultPanel } from './ResultPanel'
 import './flow.css'
 
@@ -21,10 +19,14 @@ interface Props {
   user: AuthUser
   onBack: () => void
   onChanged: (entry: Entry) => void
+  /** Open the question builder for this log. Professor only. */
+  onBuild: (entryId: string) => void
+  /** Open the exercise page — read it, or answer it. */
+  onAnswer: (entryId: string) => void
 }
 
 /** One case, all the way through: analysis → certification → reasoning → result. */
-export function CaseFlow({ entryId, user, onBack, onChanged }: Props) {
+export function CaseFlow({ entryId, user, onBack, onChanged, onBuild, onAnswer }: Props) {
   const [entry, setEntry] = useState<Entry | null>(null)
   const [axes, setAxes] = useState<CandidateAxes | null>(null)
   const [exercise, setExercise] = useState<Exercise | null>(null)
@@ -107,7 +109,7 @@ export function CaseFlow({ entryId, user, onBack, onChanged }: Props) {
             <p className="prose">{entry.competency_title}</p>
           </div>
           <div className="analysis-cell">
-            <span className="eyebrow">Subject</span>
+            <span className="eyebrow">Speciality</span>
             <p>{entry.subject}</p>
           </div>
           <div className="analysis-cell">
@@ -140,22 +142,28 @@ export function CaseFlow({ entryId, user, onBack, onChanged }: Props) {
         )}
       </section>
 
-      {/* Screen 3 · certification, professor only */}
+      {/* Screen 3 · the questions, professor only.
+          The batch certify panel used to live here. Questions are now written
+          one at a time on their own page, so this hands over rather than
+          offering a second way to do the same thing. */}
       {entry.status === 'logged' &&
         (isProfessor && axes ? (
-          <CertifyPanel
-            entryId={entryId}
-            axes={axes}
-            onCertified={(generated) => {
-              setExercise(generated)
-              const updated = { ...entry, status: 'certified' as const }
-              setEntry(updated)
-              onChanged(updated)
-            }}
-          />
+          <section className="card waiting is-action">
+            <h2>No questions yet</h2>
+            <p>
+              Choose the variations worth testing for this {entry.role_label?.toLowerCase()} and
+              write them one at a time — {axes.suggestions.length > 0
+                ? `the AI has already shortlisted ${axes.suggestions.length} axes for this case.`
+                : 'the AI can suggest both the axis and the variation.'}
+            </p>
+            <button type="button" className="btn btn-primary" onClick={() => onBuild(entryId)}>
+              Build the questions
+              <ArrowIcon width={16} height={16} />
+            </button>
+          </section>
         ) : (
           <section className="card waiting">
-            <h2>Waiting for certification</h2>
+            <h2>Waiting for your questions</h2>
             <p>
               Your professor decides which variations of this case discriminate, and which
               single question you must get right. Your reasoning exercise is built from that.
@@ -208,19 +216,23 @@ export function CaseFlow({ entryId, user, onBack, onChanged }: Props) {
         </section>
       )}
 
-      {/* Screen 4 · the exercise */}
+      {/* Screen 4 · the exercise, which has its own page.
+          Answering used to happen in a card here. It reads as a footnote to the
+          case rather than the thing it is, and having two answering UIs is two
+          places to keep in step — so this hands over instead. */}
       {exercise && exercise.released && !attempt && (
-        <ExercisePanel
-          entryId={entryId}
-          exercise={exercise}
-          readOnly={isProfessor}
-          onMarked={(marked) => {
-            setAttempt(marked)
-            const updated = { ...entry, status: 'answered' as const }
-            setEntry(updated)
-            onChanged(updated)
-          }}
-        />
+        <section className="card waiting is-action">
+          <h2>{isProfessor ? 'The exercise is released' : 'Your exercise is ready'}</h2>
+          <p>
+            {isProfessor
+              ? `${exercise.questions.length} question${exercise.questions.length === 1 ? '' : 's'} are with the ${entry.role_label?.toLowerCase()}. You can read the set as they will see it.`
+              : `${exercise.questions.length} question${exercise.questions.length === 1 ? '' : 's'} on your own case, each varying it along one axis your professor certified.`}
+          </p>
+          <button type="button" className="btn btn-primary" onClick={() => onAnswer(entryId)}>
+            {isProfessor ? 'View the exercise' : 'Answer it now'}
+            <ArrowIcon width={16} height={16} />
+          </button>
+        </section>
       )}
 
       {attempt?.marking && (

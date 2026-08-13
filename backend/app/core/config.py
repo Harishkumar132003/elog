@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -24,9 +24,32 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_ttl_minutes: int = 60 * 12
 
+    # --- which engine writes the text ------------------------------------
+    # "corti" is the product; "openai" exists so development can continue when
+    # the Corti account is unavailable. The six text features switch together —
+    # dictation does not, because it is a Corti WebSocket rather than a template.
+    ai_provider: str = Field(default="corti", alias="OPBOOK_AI_PROVIDER")
+    openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
+    openai_model: str = Field(default="gpt-4o-mini", alias="OPENAI_MODEL")
+    # Overridable so the same client reaches Azure OpenAI or a local gateway.
+    openai_base_url: str = Field(
+        default="https://api.openai.com/v1", alias="OPENAI_BASE_URL"
+    )
+    # One call per feature and no streaming, so this is a plain ceiling. Kept
+    # under Cloudflare's 100s idle limit for the same reason the suggest
+    # timeouts are.
+    openai_timeout_seconds: float = 60.0
+
+    @property
+    def uses_openai(self) -> bool:
+        return self.ai_provider.strip().lower() == "openai"
+
     # --- Corti -----------------------------------------------------------
-    corti_client_id: str = Field(alias="OPBOOK_CORTI_CLIENT_ID")
-    corti_client_secret: str = Field(alias="OPBOOK_CORTI_CLIENT_SECRET")
+    # Blank-defaulted rather than required, so a machine with only an OpenAI key
+    # can boot. Still enforced below when Corti is the active provider — the
+    # loudness moves, it does not go away.
+    corti_client_id: str = Field(default="", alias="OPBOOK_CORTI_CLIENT_ID")
+    corti_client_secret: str = Field(default="", alias="OPBOOK_CORTI_CLIENT_SECRET")
     corti_environment: str = Field(default="eu", alias="OPBOOK_CORTI_ENVIRONMENT")
     corti_tenant: str = Field(default="base", alias="OPBOOK_CORTI_TENANT")
     # Generation of a full question set has been measured at ~33s and Corti's
@@ -42,7 +65,18 @@ class Settings(BaseSettings):
     # latency is 2.7-5.5s, so 30s is six times the worst case and still fails
     # cleanly — the professor writes their own, which is the fallback anyway.
     suggest_timeout_seconds: float = 30.0
+    # The same reasoning for the question builder, which writes ONE question per
+    # press and so blocks the request. A full set of three has been measured at
+    # ~33s, so a single question is roughly a third of that; 45s is a wide margin
+    # that still returns the scripted question rather than a 524.
+    question_timeout_seconds: float = 45.0
     corti_enabled: bool = True
+
+    # --- identities ------------------------------------------------------
+    # Five fixed users picked from a header dropdown, no password. Turning this
+    # off closes `/auth/switch` and leaves `/auth/login` as the only way in, so
+    # this can never be live by accident in a real deployment.
+    demo_identities: bool = True
 
     @property
     def corti_token_url(self) -> str:
@@ -90,6 +124,33 @@ class Settings(BaseSettings):
     max_narrative_chars: int = 4000
     default_page_size: int = 25
     max_page_size: int = 100
+
+    @model_validator(mode="after")
+    def _check_provider(self) -> "Settings":
+        """Refuse to start on a provider that cannot possibly work.
+
+        Every AI call in this app degrades to a rule-based answer rather than
+        failing, which is right at runtime and wrong at boot: a missing key would
+        show up as bland questions and zero marks days later, not as an error.
+        The whole point of the switch is to escape that state, so landing back in
+        it silently is the one outcome worth refusing.
+        """
+        provider = self.ai_provider.strip().lower()
+        if provider not in {"corti", "openai"}:
+            raise ValueError(
+                f"OPBOOK_AI_PROVIDER must be 'corti' or 'openai', not {self.ai_provider!r}"
+            )
+        if provider == "openai" and not self.openai_api_key.strip():
+            raise ValueError(
+                "OPBOOK_AI_PROVIDER=openai needs OPENAI_API_KEY set in backend/.env"
+            )
+        if provider == "corti" and not (self.corti_client_id and self.corti_client_secret):
+            raise ValueError(
+                "OPBOOK_CORTI_CLIENT_ID and OPBOOK_CORTI_CLIENT_SECRET are required "
+                "when OPBOOK_AI_PROVIDER is 'corti' (the default). Set "
+                "OPBOOK_AI_PROVIDER=openai to develop without them."
+            )
+        return self
 
 
 @lru_cache(maxsize=1)

@@ -845,6 +845,15 @@
   color: var(--ink-2);
 }
 
+/* A waiting card that is actually the professor's next move, not a status. */
+.waiting.is-action {
+  border-color: var(--accent-line);
+}
+
+.waiting.is-action .btn {
+  margin-top: 18px;
+}
+
 @media (max-width: 880px) {
   .analysis-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

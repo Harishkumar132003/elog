@@ -96,5 +96,5 @@ async def suggest_axes(entry: dict[str, Any]) -> dict[str, Any]:
         "suggestions": suggestions,
         "critical_axis": critical,
         "critical_why": (fields.get("critical_why") or "").strip(),
-        "source": "corti",
+        "source": _settings.ai_provider,
     }

@@ -11,7 +11,7 @@ from app.api.router import api_router
 from app.core.config import get_settings
 from app.core.constants import Subject
 from app.db import mongo
-from app.services import catalogue
+from app.services import catalogue, openai_client, people
 from app.services.corti import corti
 from app.services.corti_templates import ensure_template, parse_template
 
@@ -32,7 +32,13 @@ async def _warm_parse_templates() -> None:
     too long to hold up start-up — but doing it in the background still spares the
     first resident to press Analyse. A failure is not fatal: everything falls back
     to rules.
+
+    OpenAI has nothing to provision — its schema is composed per call — so there
+    is no warm-up to run.
     """
+    if settings.uses_openai:
+        return
+
     for subject in Subject:
         template = await ensure_template(parse_template(subject.value))
         logger.info(
@@ -46,11 +52,29 @@ async def _warm_parse_templates() -> None:
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     global _warmup
     await mongo.connect()
-    await corti.start()
+
+    # One provider writes the text; the other's client is never started, so a
+    # missing credential for the unused one cannot cost a connection.
+    if settings.uses_openai:
+        await openai_client.start()
+        logger.info(
+            "AI provider: openai (model %s) — Corti is not in use for generation",
+            settings.openai_model,
+        )
+    else:
+        await corti.start()
+        logger.info("AI provider: corti (tenant %s)", settings.corti_tenant)
 
     # An empty catalogue gets the specification's five competencies; a loaded one
     # is left alone. Must run before any template is built from it.
     await catalogue.seed_if_empty()
+
+    # The header offers five identities and expects all five to exist. Cheap,
+    # idempotent, and on the boot path deliberately: a missing identity is a
+    # dead dropdown entry, not something to discover on first click.
+    if settings.demo_identities:
+        await people.seed()
+
     _warmup = asyncio.create_task(_warm_parse_templates())
 
     yield
@@ -58,6 +82,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     if _warmup is not None:
         _warmup.cancel()
     await corti.close()
+    await openai_client.close()
     await mongo.close()
 
 

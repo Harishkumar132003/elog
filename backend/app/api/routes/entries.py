@@ -15,6 +15,7 @@ from app.core.config import get_settings
 from app.core.constants import DopsRole, EntryStatus, role_labels
 from app.data.axes import subject_class
 from app.db import mongo
+from app.schemas.case import CaseCreate
 from app.schemas.entry import (
     EntryCreate,
     EntryDetail,
@@ -125,12 +126,15 @@ async def parse_stream(payload: ParseRequest, user: CurrentUser) -> StreamingRes
     )
 
 
-def _apply_corrections(parsed: dict[str, Any], payload: EntryCreate) -> bool:
-    """Overlay the resident's corrections onto the parse.
+def _apply_corrections(parsed: dict[str, Any], payload: EntryCreate | CaseCreate) -> bool:
+    """Overlay the author's corrections onto the parse.
 
     Written back into `parsed`, not just the flat columns, because question
-    generation reads `parsed` — a correction the resident made here has to be
-    the version the reasoning exercise is built from.
+    generation reads `parsed` — a correction made here has to be the version the
+    reasoning exercise is built from.
+
+    Shared by the entry and case forms: both carry the same four correction
+    fields, and both rely on `model_fields_set` to tell "cleared" from "untouched".
     """
     sent = payload.model_fields_set
     edited = False
@@ -180,7 +184,7 @@ async def create_entry(
         if chosen is None or chosen["subject"] != payload.subject.value:
             raise HTTPException(
                 status.HTTP_422_UNPROCESSABLE_ENTITY,
-                "That competency is not one of this subject's",
+                "That competency is not one of this speciality's",
             )
         competency = chosen
 

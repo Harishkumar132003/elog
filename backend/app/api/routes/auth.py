@@ -10,7 +10,15 @@ from app.core.config import get_settings
 from app.core.constants import Role
 from app.core.security import create_access_token, hash_password, verify_password
 from app.db import mongo
-from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserPublic
+from app.schemas.auth import (
+    IdentityOut,
+    LoginRequest,
+    RegisterRequest,
+    SwitchRequest,
+    TokenResponse,
+    UserPublic,
+)
+from app.services import people
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 _settings = get_settings()
@@ -23,6 +31,7 @@ def _public(user: dict[str, Any]) -> dict[str, Any]:
         "email": user["email"],
         "name": user["name"],
         "role": user["role"],
+        "dops_role": user.get("dops_role"),
         "professor_id": str(user["professor_id"]) if user.get("professor_id") else None,
         "department": user.get("department"),
         "year": user.get("year"),
@@ -85,6 +94,35 @@ async def login(payload: LoginRequest) -> dict[str, Any]:
     # Same error either way — never reveal whether an email exists.
     if user is None or not verify_password(payload.password, user.get("password_hash", "")):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Incorrect email or password")
+    return _token_for(user)
+
+
+def _demo_only() -> None:
+    if not _settings.demo_identities:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, "Identity switching is not enabled on this deployment"
+        )
+
+
+@router.get("/identities", response_model=list[IdentityOut])
+async def list_identities() -> list[dict[str, Any]]:
+    """The header's dropdown. Unauthenticated — it is what you use to get a token."""
+    _demo_only()
+    return people.listing()
+
+
+@router.post("/switch", response_model=TokenResponse)
+async def switch(payload: SwitchRequest) -> dict[str, Any]:
+    """Become one of the five fixed identities.
+
+    This is the whole of "signing in" here: name and role are the same thing, so
+    choosing a role chooses the person. Deliberately unauthenticated — it is the
+    entry point, and `demo_identities` is the gate.
+    """
+    _demo_only()
+    user = await people.by_key(payload.role)
+    if user is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"No such identity: {payload.role}")
     return _token_for(user)
 
 

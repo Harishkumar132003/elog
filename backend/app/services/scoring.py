@@ -10,11 +10,13 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from app.core.config import get_settings
 from app.data.bloom import COGNITIVE_LEVELS
 from app.services.corti import CortiError
 from app.services.corti_templates import run_template, scoring_template
 
 logger = logging.getLogger(__name__)
+_settings = get_settings()
 
 # A Critical item is failed by a wrong answer, per §3.4.
 _FAILING_VERDICTS = {"incorrect"}
@@ -170,4 +172,8 @@ async def score_answers(
             }
         )
 
-    return {"results": results, "summary": _roll_up(results, True), "source": "corti"}
+    return {
+        "results": results,
+        "summary": _roll_up(results, True),
+        "source": _settings.ai_provider,
+    }

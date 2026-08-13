@@ -7,8 +7,19 @@ const VERDICT_PILL: Record<string, string> = {
   incorrect: 'pill-alert',
 }
 
-/** The recorded result — the roll-up to competency and Annexure I (§3.5). */
-export function ResultPanel({ attempt }: { attempt: Attempt }) {
+/** The recorded result — the roll-up to competency and Annexure I (§3.5).
+ *
+ *  `breakdown` is off where the questions are already on the page with their
+ *  own marks beside them: the exercise page shows each result inside the card
+ *  it belongs to, so listing them again here printed every question twice.
+ */
+export function ResultPanel({
+  attempt,
+  breakdown = true,
+}: {
+  attempt: Attempt
+  breakdown?: boolean
+}) {
   const { summary } = attempt
   const failed = summary.critical_failed
 
@@ -49,6 +60,7 @@ export function ResultPanel({ attempt }: { attempt: Attempt }) {
         <p>{attempt.competency_title}</p>
       </div>
 
+      {breakdown && (
       <ol className="results">
         {attempt.results.map((result) => (
           <li className={`result-item${result.critical_failed ? ' is-failed' : ''}`} key={result.question_id}>
@@ -97,6 +109,7 @@ export function ResultPanel({ attempt }: { attempt: Attempt }) {
           </li>
         ))}
       </ol>
+      )}
 
       {attempt.source !== 'corti' && (
         <p className="result-note">

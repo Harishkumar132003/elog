@@ -80,6 +80,9 @@ class EntryOut(BaseModel):
     id: str
     resident_id: str
     professor_id: str | None = None
+    # Set when this entry is one participant's log of a shared case. Absent on
+    # entries written before cases existed, which still work exactly as they did.
+    case_id: str | None = None
     subject: str
     narrative: str
     role: str
@@ -95,6 +98,9 @@ class EntryOut(BaseModel):
     procedure: str | None = None
     patient_age: int | None = None
     patient_sex: str | None = None
+    # When the participant actually wrote this log, which is not when the case
+    # was created — the observer may write theirs days later.
+    logged_at: datetime | None = None
     created_at: datetime
 
 

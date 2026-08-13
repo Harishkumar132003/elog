@@ -1,12 +1,21 @@
+/* The header sits above both the rail and the page, so the two-column shell is
+   what is left below it rather than the whole viewport. */
+.frame {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 .shell {
   display: flex;
-  min-height: 100vh;
+  flex: 1;
+  min-height: 0;
 }
 
 .main {
   flex: 1;
   min-width: 0;
-  height: 100vh;
+  height: calc(100vh - 64px);
   overflow-y: auto;
   /* Flat, like the reference: the cards provide the depth, not the page. */
   background: var(--paper);

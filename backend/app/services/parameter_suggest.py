@@ -119,4 +119,4 @@ async def suggest_parameters(
         if len(parameters) == MAX_PARAMETERS:
             break
 
-    return {"parameters": parameters, "source": "corti" if parameters else "none"}
+    return {"parameters": parameters, "source": _settings.ai_provider if parameters else "none"}

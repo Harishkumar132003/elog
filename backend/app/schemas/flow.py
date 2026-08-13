@@ -76,6 +76,28 @@ class CertifyRequest(BaseModel):
     axes: list[AxisChoice] = Field(min_length=1)
 
 
+class QuestionAdd(BaseModel):
+    """One question, written on its own.
+
+    The professor builds a set a card at a time rather than certifying a batch,
+    so this is the certify payload for exactly one slot.
+
+    `prompt` carries the wording back after the professor has read and edited the
+    preview. When it is present nothing is generated — the text is theirs, and
+    the AI call was already spent on the preview. Omit it and this generates, as
+    it did before the preview step existed.
+    """
+
+    axis_id: str
+    parameter: str = Field(min_length=1, max_length=400)
+    marks: int = Field(default=10, ge=1, le=100)
+    critical: bool = False
+
+    prompt: str | None = Field(default=None, min_length=10, max_length=1200)
+    cognitive: str | None = Field(default=None, max_length=40)
+    affective: str | None = Field(default=None, max_length=40)
+
+
 class QuestionOut(BaseModel):
     id: int
     axis_id: str

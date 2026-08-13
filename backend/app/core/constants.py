@@ -26,6 +26,9 @@ class DopsRole(StrEnum):
     OBSERVED = "observed"
     SUPERVISED = "supervised"
     INDEPENDENT = "independent"
+    # The senior in the room. Not a DOPS level like the three above — a case has
+    # one supervisor *and* someone they supervised, and both log it.
+    SUPERVISOR = "supervisor"
     TOPIC = "topic"
 
 
@@ -33,14 +36,16 @@ class DopsRole(StrEnum):
 # pre-clinical entries have no role level at all.
 ROLE_LABELS: dict[str, dict[DopsRole, tuple[str, str]]] = {
     "clinical": {
-        DopsRole.OBSERVED: ("Observed", "watched it done"),
-        DopsRole.SUPERVISED: ("Performed under supervision", "did it, senior present"),
-        DopsRole.INDEPENDENT: ("Performed independently", "did it, unsupervised"),
+        DopsRole.OBSERVED: ("Observer", "watched it done"),
+        DopsRole.SUPERVISED: ("Performer with supervision", "did it, senior present"),
+        DopsRole.INDEPENDENT: ("Independent performer", "did it, unsupervised"),
+        DopsRole.SUPERVISOR: ("Supervisor", "oversaw someone else doing it"),
     },
     "para-clinical": {
-        DopsRole.OBSERVED: ("Assisted", "helped with it"),
-        DopsRole.SUPERVISED: ("Reviewed", "reported it with a senior"),
-        DopsRole.INDEPENDENT: ("Performed", "reported it yourself"),
+        DopsRole.OBSERVED: ("Observer", "helped with it"),
+        DopsRole.SUPERVISED: ("Performer with supervision", "reported it with a senior"),
+        DopsRole.INDEPENDENT: ("Independent performer", "reported it yourself"),
+        DopsRole.SUPERVISOR: ("Supervisor", "checked someone else's report"),
     },
     "pre-clinical": {
         DopsRole.TOPIC: ("Topic-based", "a topic, not a patient"),

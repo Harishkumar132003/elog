@@ -13,9 +13,11 @@ import logging
 from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 
 from app.api.deps import CurrentProfessor, CurrentResident, CurrentUser, entry_filter_for, to_object_id
+from app.core.config import get_settings
 from app.core.constants import DopsRole, EntryStatus, Role, role_labels
 from app.data.axes import BY_ID as AXIS_BY_ID
 from app.data.axes import FAMILY_LABELS, Family, candidate_axes, subject_class
+from app.data.bloom import AFFECTIVE_LEVELS, COGNITIVE_LEVELS, PSYCHOMOTOR_NOT_ASSESSED
 from app.db import mongo
 from app.schemas.flow import (
     AttemptOut,
@@ -26,14 +28,17 @@ from app.schemas.flow import (
     ExerciseOut,
     ExerciseUpdate,
     ParameterSuggestRequest,
+    QuestionAdd,
+    QuestionOut,
 )
 from app.services.axis_suggest import suggest_axes
 from app.services.parameter_suggest import suggest_parameters
-from app.services.exercise import generate_questions
+from app.services.exercise import default_levels, generate_one, generate_questions
 from app.services.scoring import pending_summary, score_answers
 
 router = APIRouter(prefix="/entries", tags=["flow"])
 logger = logging.getLogger(__name__)
+_settings = get_settings()
 
 
 async def _owned_entry(entry_id: str, user: dict[str, Any]) -> dict[str, Any]:
@@ -151,15 +156,44 @@ async def suggest_parameters_for_axis(
     give a fresh set — a professor who did not like the first three wants
     different ones, not the same three served from the entry.
 
-    Whatever they already have on the axis is sent along, so the model proposes
-    something new rather than the same obvious variation a third time.
+    What this log already has on this axis is read from its own certification
+    and sent along, so the model proposes something new rather than the same
+    obvious variation a third time.
     """
     entry = await _owned_entry(entry_id, professor)
+    already = await _parameters_used(entry["_id"], axis_id)
+    # Plus anything sitting unsaved in the professor's box, which the
+    # certification cannot know about yet.
+    already += [text for text in (payload.existing if payload else []) if text]
     return await suggest_parameters(
         mongo.serialize(entry),  # type: ignore[arg-type]
         axis_id,
-        payload.existing if payload else [],
+        already,
     )
+
+
+async def _parameters_used(entry_id: ObjectId, axis_id: str) -> list[str]:
+    """The parameters already certified on this axis, for this one log.
+
+    Read from the stored certification rather than taken from the client: the
+    client holds generated questions, not the variations behind them, so it has
+    no way to tell the model what has already been asked.
+
+    Scoped to the entry, which is one participant's log of one case. So the
+    observer and the supervisor on the same case may both be asked about the
+    same variation — they are different people reasoning from different vantage
+    points — but neither of them is ever asked it twice.
+    """
+    certification = await mongo.certifications().find_one({"entry_id": entry_id})
+    if not certification:
+        return []
+    return [
+        text
+        for axis in certification.get("axes", [])
+        if axis.get("axis_id") == axis_id
+        for parameter in axis.get("parameters", [])
+        if (text := (parameter.get("text") or "").strip())
+    ]
 
 
 # --- Screen 3 · configure ------------------------------------------------
@@ -245,6 +279,248 @@ async def certify(
     return _shape_exercise(entry, exercise, attempted=False)
 
 
+# --- Screen 3 · one question at a time -----------------------------------
+def _checked_axis(entry: dict[str, Any], axis_id: str) -> dict[str, str]:
+    """The axis, if it is one this entry's role actually offers.
+
+    The closed set is enforced here as well as in the UI, so no invented axis can
+    reach the generator or the stored certification.
+    """
+    allowed = {axis["id"] for axis in candidate_axes(entry["subject"], entry["role"])}
+    axis = AXIS_BY_ID.get(axis_id)
+    if axis is None or axis_id not in allowed:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            f"Axis not offered for this entry: {axis_id}",
+        )
+    return axis
+
+
+@router.post("/{entry_id}/questions/preview", response_model=QuestionOut)
+async def preview_question(
+    entry_id: str, payload: QuestionAdd, professor: CurrentProfessor
+) -> dict[str, Any]:
+    """Write one question and hand it back WITHOUT storing it.
+
+    The professor reads what the AI produced, edits the wording if it is not
+    quite right, and only then saves. Splitting generation from the save is the
+    whole point: a question they cannot read before committing is one they have
+    to delete afterwards.
+
+    Nothing here touches the exercise or the certification, so abandoning a
+    preview leaves no trace — it costs one AI call and nothing else.
+    """
+    entry = await _owned_entry(entry_id, professor)
+    _checked_axis(entry, payload.axis_id)
+
+    question = await generate_one(
+        mongo.serialize(entry),  # type: ignore[arg-type]
+        payload.axis_id,
+        payload.parameter.strip(),
+        payload.marks,
+        payload.critical,
+    )
+    if question is None:
+        raise HTTPException(
+            status.HTTP_502_BAD_GATEWAY, "The question could not be written — try again"
+        )
+    question.pop("source", None)
+    # Id 0 = not placed yet. The slot is decided on save, by how many questions
+    # the exercise holds then — a preview has no position in the set.
+    question["id"] = 0
+    return question
+
+
+@router.post("/{entry_id}/questions", response_model=ExerciseOut, status_code=status.HTTP_201_CREATED)
+async def add_question(
+    entry_id: str, payload: QuestionAdd, professor: CurrentProfessor
+) -> dict[str, Any]:
+    """Write one question and append it to this log's set.
+
+    The builder screen works a card at a time — choose an axis, settle on a
+    parameter, generate, read it, edit it, keep it — rather than certifying a
+    batch and waiting for the whole exercise. So this both extends the
+    certification and extends the exercise, keeping the two in step.
+
+    Send `prompt` and this stores that wording as given; omit it and this
+    generates one. The builder always sends it, because the professor has just
+    read the preview — generating here too would spend a second call and throw
+    away the version they approved.
+    """
+    entry = await _owned_entry(entry_id, professor)
+    axis = _checked_axis(entry, payload.axis_id)
+
+    exercise = await mongo.exercises().find_one({"entry_id": entry["_id"]})
+    if exercise and exercise.get("released"):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "This exercise has been released and can no longer be changed",
+        )
+
+    if payload.prompt:
+        cognitive, affective = default_levels(payload.axis_id)
+        question = {
+            "axis_id": payload.axis_id,
+            "axis_label": axis["label"],
+            "prompt": payload.prompt.strip(),
+            # The levels are the professor's if they set them, and the axis's own
+            # otherwise — never a value outside the two closed Bloom lists.
+            "cognitive": payload.cognitive if payload.cognitive in COGNITIVE_LEVELS else cognitive,
+            "affective": payload.affective if payload.affective in AFFECTIVE_LEVELS else affective,
+            "psychomotor": PSYCHOMOTOR_NOT_ASSESSED,
+            "marks": payload.marks,
+            "critical": payload.critical,
+            # The wording came from the preview and may have been reworded since,
+            # so the provider is what produced it either way.
+            "source": _settings.ai_provider,
+        }
+    else:
+        question = await generate_one(
+            mongo.serialize(entry),  # type: ignore[arg-type]
+            payload.axis_id,
+            payload.parameter.strip(),
+            payload.marks,
+            payload.critical,
+        )
+    if question is None:
+        raise HTTPException(
+            status.HTTP_502_BAD_GATEWAY, "The question could not be written — try again"
+        )
+
+    existing = list(exercise.get("questions", [])) if exercise else []
+    # Exactly one Critical item per exercise (§3.4). Ticking it here takes it off
+    # whichever question held it — last wins — because demanding the invariant on
+    # every save would make it impossible to move.
+    if payload.critical:
+        for other in existing:
+            other["critical"] = False
+
+    source = question.pop("source", _settings.ai_provider)
+    question["id"] = len(existing) + 1
+    questions = existing + [question]
+
+    await mongo.exercises().update_one(
+        {"entry_id": entry["_id"]},
+        {
+            "$set": {
+                "questions": questions,
+                "source": source,
+                "generating": False,
+                "failed": False,
+                "edited": True,
+            },
+            "$setOnInsert": {
+                "entry_id": entry["_id"],
+                "resident_id": entry["resident_id"],
+                "professor_id": ObjectId(professor["id"]),
+                "released": False,
+                "created_at": datetime.now(UTC),
+            },
+        },
+        upsert=True,
+    )
+
+    # Keep the certification in step: the dashboard's axis roll-up and the
+    # certification screen both read it, and a question with no certified axis
+    # behind it would be invisible to them.
+    await _record_certified(entry, professor, payload, clear_critical=payload.critical)
+    await mongo.entries().update_one(
+        {"_id": entry["_id"]}, {"$set": {"status": EntryStatus.CERTIFIED.value}}
+    )
+    entry["status"] = EntryStatus.CERTIFIED.value
+
+    # Echo the fields just written, not the document as it was read. `exercise`
+    # is None on the first question, so shaping from it alone reported the
+    # default source of "corti" for a question that actually came from the
+    # scripted fallback — the stored value was right, the answer was not.
+    return _shape_exercise(
+        entry,
+        {
+            **(exercise or {}),
+            "questions": questions,
+            "source": source,
+            "generating": False,
+            "failed": False,
+            "edited": True,
+        },
+        attempted=False,
+    )
+
+
+async def _record_certified(
+    entry: dict[str, Any],
+    professor: dict[str, Any],
+    payload: QuestionAdd,
+    clear_critical: bool,
+) -> None:
+    """Append this parameter to the entry's certification, creating it if needed."""
+    certification = await mongo.certifications().find_one({"entry_id": entry["_id"]})
+    axes: list[dict[str, Any]] = list(certification.get("axes", [])) if certification else []
+
+    if clear_critical:
+        for axis in axes:
+            for parameter in axis.get("parameters", []):
+                parameter["critical"] = False
+
+    parameter = {
+        "text": payload.parameter.strip(),
+        "marks": payload.marks,
+        "critical": payload.critical,
+    }
+    for axis in axes:
+        if axis["axis_id"] == payload.axis_id:
+            axis.setdefault("parameters", []).append(parameter)
+            break
+    else:
+        axes.append(
+            {"axis_id": payload.axis_id, "discriminates": True, "parameters": [parameter]}
+        )
+
+    await mongo.certifications().update_one(
+        {"entry_id": entry["_id"]},
+        {
+            "$set": {
+                "axes": axes,
+                "professor_id": ObjectId(professor["id"]),
+                "certified_at": datetime.now(UTC),
+            },
+            "$setOnInsert": {"entry_id": entry["_id"]},
+        },
+        upsert=True,
+    )
+
+
+@router.delete("/{entry_id}/questions/{question_id}", response_model=ExerciseOut)
+async def remove_question(
+    entry_id: str, question_id: int, professor: CurrentProfessor
+) -> dict[str, Any]:
+    """Drop one question and renumber. Refused once released."""
+    entry = await _owned_entry(entry_id, professor)
+    exercise = await mongo.exercises().find_one({"entry_id": entry["_id"]})
+    if exercise is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No exercise for this entry")
+    if exercise.get("released"):
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "This exercise has been released and can no longer be changed",
+        )
+
+    questions = [q for q in exercise.get("questions", []) if q["id"] != question_id]
+    if len(questions) == len(exercise.get("questions", [])):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No such question")
+
+    # Renumber so ids stay 1..n. Safe: an attempt can only exist after release,
+    # and a released exercise never reaches here.
+    for position, question in enumerate(questions, start=1):
+        question["id"] = position
+
+    await mongo.exercises().update_one(
+        {"_id": exercise["_id"]}, {"$set": {"questions": questions}}
+    )
+    exercise["questions"] = questions
+    return _shape_exercise(entry, exercise, attempted=False)
+
+
 # --- Screen 3b · review, edit and release --------------------------------
 def _shape_exercise(
     entry: dict[str, Any], exercise: dict[str, Any], attempted: bool
@@ -252,7 +528,7 @@ def _shape_exercise(
     return {
         "entry_id": str(entry["_id"]),
         "status": entry.get("status", EntryStatus.CERTIFIED.value),
-        "source": exercise.get("source", "corti"),
+        "source": exercise.get("source", _settings.ai_provider),
         "questions": exercise["questions"],
         "competency_title": entry.get("competency_title"),
         "role_label": _role_label(entry),
@@ -359,6 +635,17 @@ async def release_exercise(entry_id: str, professor: CurrentProfessor) -> dict[s
             status.HTTP_409_CONFLICT, "The questions are not ready to release yet"
         )
 
+    # Checked here rather than on every save: the set is built a question at a
+    # time, so demanding a whole-exercise invariant mid-build would make the
+    # Critical item impossible to place. Release is the moment it must hold.
+    critical = [q for q in exercise["questions"] if q.get("critical")]
+    if len(critical) != 1:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "Exactly one question must be the critical question — "
+            f"found {len(critical)}",
+        )
+
     await mongo.exercises().update_one(
         {"_id": exercise["_id"]},
         {"$set": {"released": True, "released_at": datetime.now(UTC)}},
@@ -447,7 +734,7 @@ def _shape_attempt(entry: dict[str, Any], attempt: dict[str, Any]) -> dict[str, 
     return {
         "entry_id": str(entry["_id"]),
         "competency_title": attempt.get("competency_title"),
-        "source": attempt.get("source", "corti"),
+        "source": attempt.get("source", _settings.ai_provider),
         "results": results,
         "summary": attempt["summary"],
         "marking": bool(attempt.get("marking")),

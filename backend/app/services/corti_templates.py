@@ -24,6 +24,7 @@ import logging
 import re
 from typing import Any
 
+from app.core.config import get_settings
 from app.core.constants import Subject
 from app.data.axes import ALL_IDS as ALL_AXIS_IDS
 from app.data.bloom import AFFECTIVE_LEVELS, COGNITIVE_LEVELS
@@ -31,6 +32,7 @@ from app.db import mongo
 from app.services.corti import CortiError, corti
 
 logger = logging.getLogger(__name__)
+_settings = get_settings()
 
 PARSE_TEMPLATE = "elog_parse"
 AXIS_TEMPLATE = "axis_suggest"
@@ -292,10 +294,12 @@ _SPECS: dict[str, dict[str, Any]] = {
             "Rules you must not break:\n"
             "1. Vary the case ONLY along the certified axis given for each slot. You may "
             "not introduce a variation of any other kind.\n"
-            "2. The resident's role is given. It changes the TYPE of reasoning tested, "
-            "never the difficulty: observed asks why the approach was chosen; supervised "
-            "removes the senior and asks for the decision; independent asks about "
-            "complications, atypical courses and constraints.\n"
+            "2. The person's role is given. It changes the TYPE of reasoning tested, "
+            "never the difficulty: an observer is asked why the approach was chosen; a "
+            "performer with supervision has the senior removed and is asked for the "
+            "decision; an independent performer is asked about complications, atypical "
+            "courses and constraints; a supervisor is asked about the oversight "
+            "decision — when to intervene and what was safe to delegate.\n"
             "3. Questions are answered in free text, so never write multiple choice, and "
             "never ask a question answerable by a single word.\n"
             "4. Stay within Indian practice: district hospitals, limited imaging, "
@@ -471,7 +475,15 @@ async def ensure_template(key: str) -> dict[str, Any] | None:
     """Return `{template_id, section_map}` for a spec, provisioning if needed.
 
     Returns None when Corti is unreachable — callers fall back rather than fail.
+
+    Nothing to do under OpenAI: there is no stored template there, the schema is
+    composed per call. Returning early here is what makes the two callers that
+    provision eagerly — the boot warm-up and the re-provision after a catalogue
+    edit — no-ops for free.
     """
+    if _settings.uses_openai:
+        return None
+
     spec = await _spec_for(key)
     fingerprint = _fingerprint(spec)
 
@@ -515,7 +527,18 @@ async def ensure_template(key: str) -> dict[str, Any] | None:
 
 
 async def run_template(key: str, context_blocks: list[str]) -> dict[str, Any] | None:
-    """Generate against a stored template and return values keyed by our own keys."""
+    """Generate one template and return values keyed by our own keys.
+
+    The single seam between this app and whichever engine writes its text. Both
+    providers answer with the same `{section key: value}` mapping, so the six
+    callers — parse, axis suggest, parameter suggest, question generation,
+    marking, competency import — never learn which one ran.
+    """
+    if _settings.uses_openai:
+        from app.services import openai_client  # local: the Corti path must not import it
+
+        return await openai_client.generate(await _spec_for(key), context_blocks)
+
     registry = await ensure_template(key)
     if registry is None:
         return None

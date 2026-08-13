@@ -68,7 +68,7 @@ const MAX_SQUARES = 72
  */
 function Squares({ row }: { row: DashboardData['coverage'][number] }) {
   if (row.total === 0) {
-    return <p className="coverage-note">No competencies set up for this subject yet.</p>
+    return <p className="coverage-note">No competencies set up for this speciality yet.</p>
   }
 
   // Retired competencies still show in the list beneath — the cases happened —
@@ -214,7 +214,7 @@ export function Dashboard() {
               <strong>{covered}</strong>
               <span>
                 competenc{covered === 1 ? 'y' : 'ies'} with evidence, across{' '}
-                {subjectsStarted} subject{subjectsStarted === 1 ? '' : 's'}
+                {subjectsStarted} special{subjectsStarted === 1 ? 'ity' : 'ities'}
               </span>
             </div>
           </div>
@@ -264,7 +264,7 @@ export function Dashboard() {
                 <span className="square is-mid" aria-hidden /> 3–4
                 <span className="square is-thin" aria-hidden /> 1–2
                 <span className="square" aria-hidden /> none yet
-                <span className="coverage-key-hint">Select a subject for the full list</span>
+                <span className="coverage-key-hint">Select a speciality for the full list</span>
               </p>
             </Panel>
 

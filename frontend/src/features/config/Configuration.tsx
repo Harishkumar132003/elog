@@ -110,7 +110,7 @@ export function Configuration() {
           setNote(
             next.found.length
               ? `Found ${next.found.length} competenc${next.found.length === 1 ? 'y' : 'ies'} not already on the list. Check them, then save.`
-              : 'Nothing new in that PDF — everything it lists is already on this subject.',
+              : 'Nothing new in that PDF — everything it lists is already on this speciality.',
           )
         }
       } catch (cause) {
@@ -244,7 +244,7 @@ export function Configuration() {
       </div>
 
       <div className="cfg-subject">
-        <label htmlFor="cfg-subject-select">Subject</label>
+        <label htmlFor="cfg-subject-select">Speciality</label>
         <select
           id="cfg-subject-select"
           className="select"

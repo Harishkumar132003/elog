@@ -1,0 +1,557 @@
+/* The case screens: creating one, and the shared page everyone logs against. */
+
+.case {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.case-h2 {
+  margin: 2px 0 0;
+  font-size: var(--t-h2);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.case-lede {
+  margin: 6px 0 0;
+  font-size: var(--t-small);
+  color: var(--ink-3);
+  max-width: 68ch;
+}
+
+.case-hint {
+  font-size: var(--t-small);
+  color: var(--ink-3);
+}
+
+/* ── the shared facts ──────────────────────────────────────────────────── */
+
+/* `.card` carries only the border, radius and surface — every screen sets its
+   own padding, so these must too or the content sits on the border. */
+.case-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 22px 26px 24px;
+}
+
+.case-competency {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  align-self: flex-start;
+  margin: 0;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  font-size: var(--t-tiny);
+  font-weight: 600;
+}
+
+/* Flex rather than equal columns: four facts stretched across a 1200px card
+   left each value marooned from its label. Natural widths keep them read as a
+   strip. */
+.case-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 48px;
+  margin: 0;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.case-strip > div {
+  min-width: 0;
+}
+
+.case-strip dt {
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.case-strip dd {
+  margin: 4px 0 0;
+  font-size: var(--t-body);
+  font-weight: 550;
+  color: var(--ink);
+}
+
+.case-strip dd.is-blank {
+  font-weight: 400;
+  color: var(--ink-3);
+}
+
+.case-narrative .eyebrow {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.case-narrative p {
+  margin: 0;
+  font-size: var(--t-read);
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+
+/* ── your own log ──────────────────────────────────────────────────────── */
+
+.case-mine {
+  padding: 22px 26px 24px;
+  border-color: var(--accent-line);
+  box-shadow: var(--shadow-sm);
+}
+
+.case-mine-head .eyebrow {
+  color: var(--accent-deep);
+}
+
+.case-mine .field-label-row {
+  margin-top: 18px;
+}
+
+.case-mine-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+/* ── the roster ────────────────────────────────────────────────────────── */
+
+.case-roster {
+  padding: 22px 26px 24px;
+}
+
+.case-roster-head {
+  margin-bottom: 16px;
+}
+
+.roster-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.roster-row {
+  padding: 13px 15px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+/* Waiting on someone. Recessive rather than alarming — a log not yet written
+   is the normal state of a fresh case, not a failure. */
+.roster-row.is-waiting {
+  background: var(--surface-sunk);
+  border-style: dashed;
+}
+
+.roster-row-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.roster-dot {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border: 1.5px solid var(--line-firm);
+  border-radius: 50%;
+  color: var(--on-accent);
+}
+
+.roster-dot.is-done {
+  border-color: var(--ok);
+  background: var(--ok);
+}
+
+.roster-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.roster-row-text strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: var(--t-body);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.roster-row-text small {
+  font-size: var(--t-tiny);
+  color: var(--ink-3);
+}
+
+.roster-you,
+.roster-tag {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.roster-you {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.roster-tag {
+  background: var(--surface-sunk);
+  color: var(--ink-3);
+}
+
+.roster-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.roster-row-log {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  background: var(--surface-sunk);
+  font-size: var(--t-small);
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+/* ── the participant picker on the create form ─────────────────────────── */
+
+.roster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.roster-me {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 13px;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--r-sm);
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+}
+
+.roster-me span {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.roster-me strong {
+  font-size: var(--t-small);
+  font-weight: 600;
+}
+
+.roster-me small {
+  font-size: var(--t-micro);
+  opacity: 0.8;
+}
+
+.roster-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 14px 9px 11px;
+  border: 1px solid var(--line-firm);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  font-size: var(--t-small);
+  font-weight: 550;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: border-color 0.14s var(--ease), background 0.14s var(--ease);
+}
+
+.roster-option:hover {
+  border-color: var(--accent);
+}
+
+.roster-option.is-on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+}
+
+.roster-box {
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  flex: none;
+  border: 1.5px solid var(--line-firm);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--on-accent);
+}
+
+.roster-option.is-on .roster-box {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+/* ── the case list ─────────────────────────────────────────────────────── */
+
+.case-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.case-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.14s var(--ease), box-shadow 0.14s var(--ease);
+}
+
+.case-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.case-card:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--glow);
+}
+
+.case-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.case-card-subject {
+  font-size: var(--t-micro);
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+}
+
+.case-card-date {
+  font-size: var(--t-micro);
+  color: var(--ink-3);
+}
+
+.case-card-title {
+  font-size: var(--t-h3);
+  font-weight: 620;
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+.case-card-competency {
+  font-size: var(--t-tiny);
+  color: var(--ink-3);
+  line-height: 1.45;
+}
+
+.case-card-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.case-card-people {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--t-micro);
+  color: var(--ink-3);
+}
+
+.case-card-count {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-sunk);
+  font-size: var(--t-micro);
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.case-card-count.is-full {
+  background: color-mix(in srgb, var(--ok) 12%, transparent);
+  color: var(--ok);
+}
+
+/* The one thing on this card that is actionable by the person reading it. */
+.case-card-owes {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--t-micro);
+  font-weight: 650;
+}
+
+/* ── loading ───────────────────────────────────────────────────────────── */
+
+.case-boot {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.skeleton-card {
+  height: 160px;
+  border-radius: var(--r-lg);
+  background: linear-gradient(
+    100deg,
+    var(--surface-sunk) 30%,
+    var(--paper-deep) 50%,
+    var(--surface-sunk) 70%
+  );
+  background-size: 240% 100%;
+  animation: skeleton 1.3s var(--ease) infinite;
+}
+
+@keyframes skeleton {
+  to {
+    background-position: -140% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-card {
+    animation: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .roster-row-main {
+    flex-wrap: wrap;
+  }
+
+  .roster-row-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* ── to answer ─────────────────────────────────────────────────────────── */
+
+/* Rows rather than the cards used for browsing: this is a worklist, and rows
+   scan faster when the only question is "which one next?". */
+.answer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.answer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  transition: border-color 0.14s var(--ease), box-shadow 0.14s var(--ease);
+}
+
+.answer-row:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.answer-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.answer-row-meta {
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.answer-row-text strong {
+  font-size: var(--t-h3);
+  font-weight: 620;
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+.answer-row-competency {
+  font-size: var(--t-tiny);
+  color: var(--ink-3);
+  line-height: 1.45;
+}
+
+.answer-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: none;
+}
+
+.answer-row-count {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  font-size: var(--t-micro);
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+@media (max-width: 620px) {
+  .answer-row-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

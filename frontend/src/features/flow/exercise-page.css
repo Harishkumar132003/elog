@@ -1,0 +1,748 @@
+/* Screen 4 as its own page.
+
+   Deliberately plain: white cards, thin rules, and the question set in the
+   largest type on the page. The number reads as part of the sentence and the
+   metadata sits underneath, so nothing competes with the thing being asked.
+   The banner is the only colour, and it is kept short. */
+
+.xpage {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── the bar above everything ──────────────────────────────────────────── */
+
+.xnav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* A link, not a button: going back is not an action on this page, and a solid
+   control competes with Release for the same attention. */
+.xnav-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px 7px 9px;
+  margin-left: -9px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-small);
+  font-weight: 600;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease);
+}
+
+.xnav-back:hover {
+  background: var(--surface-sunk);
+  color: var(--ink);
+}
+
+.xnav-back:focus-visible {
+  outline: none;
+  box-shadow: var(--glow);
+}
+
+.xnav-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── the source log ────────────────────────────────────────────────────── */
+
+.xsource {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.xsource summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 13px 18px;
+  font-size: var(--t-small);
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+  list-style: none;
+}
+
+.xsource summary::-webkit-details-marker {
+  display: none;
+}
+
+/* A caret drawn in CSS so the row needs no icon import. */
+.xsource summary::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-right: 1.6px solid var(--ink-3);
+  border-bottom: 1.6px solid var(--ink-3);
+  transform: rotate(-45deg);
+  transition: transform 0.16s var(--ease);
+}
+
+.xsource[open] summary::before {
+  transform: rotate(45deg);
+}
+
+.xsource summary:hover {
+  color: var(--ink);
+}
+
+.xsource-hint {
+  font-size: var(--t-micro);
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+.xsource p {
+  margin: 0;
+  padding: 0 18px 18px 34px;
+  max-width: 78ch;
+  font-size: var(--t-body);
+  line-height: 1.62;
+  color: var(--ink-2);
+}
+
+/* ── the banner ────────────────────────────────────────────────────────── */
+
+.xpage-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+  flex-wrap: wrap;
+  padding: 22px 26px;
+  border-radius: var(--r-lg);
+  background: linear-gradient(135deg, var(--accent-deep), var(--accent) 58%, var(--accent-lift));
+  color: var(--on-accent);
+  box-shadow: var(--shadow-md);
+}
+
+.xpage-hero-text {
+  min-width: 0;
+}
+
+.xpage-eyebrow {
+  display: block;
+  margin-bottom: 8px;
+  font-size: var(--t-micro);
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.82;
+}
+
+.xpage-title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 27px;
+  font-weight: 660;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.xpage-competency {
+  margin: 12px 0 0;
+  max-width: 60ch;
+  font-size: var(--t-small);
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
+.xpage-stats {
+  display: flex;
+  gap: 10px;
+  flex: none;
+}
+
+.xpage-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 74px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  /* Translucent rather than a solid tint, so the three tiles pick up the
+     gradient behind them instead of flattening it into a band. */
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.xpage-stat strong {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.xpage-stat span {
+  margin-top: 3px;
+  font-size: var(--t-micro);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.xpage-stat.is-critical strong {
+  color: #ffd9de;
+}
+
+/* ── the brief ─────────────────────────────────────────────────────────── */
+
+.xpage-brief {
+  padding: 18px 22px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.xpage-brief p {
+  margin: 0;
+  max-width: 76ch;
+  font-size: var(--t-body);
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+/* The icon is a flex item; everything else must be ONE flex item, or a flex
+   container lays each inline child out as its own column. Hence the span in the
+   markup — and `flex-start`, so the icon sits on the first line rather than
+   floating against the middle of a wrapped block. */
+.xpage-brief-critical {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px !important;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  color: var(--alert) !important;
+  font-size: var(--t-small) !important;
+}
+
+.xpage-brief-critical svg {
+  flex: none;
+  margin-top: 3px;
+}
+
+.xpage-brief-critical strong {
+  font-weight: 700;
+}
+
+.xnote {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 13px 18px;
+  border-radius: var(--r-md);
+  font-size: var(--t-small);
+  line-height: 1.5;
+}
+
+.xnote svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+.xnote.is-warn {
+  background: color-mix(in srgb, var(--alert) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--alert) 25%, transparent);
+  color: var(--alert);
+}
+
+/* ── the lean header, while answering ────────────────────────────────── */
+
+/* One line instead of the banner. Someone sitting down to write has already
+   read the context; from then on it is just something to scroll past. */
+.xlean-head {
+  padding: 4px 2px 0;
+}
+
+.xlean-head h1 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--t-h2);
+  font-weight: 660;
+  letter-spacing: -0.022em;
+  color: var(--ink);
+}
+
+.xlean-head p {
+  margin: 5px 0 0;
+  font-size: var(--t-small);
+  color: var(--ink-3);
+}
+
+/* ── the questions ─────────────────────────────────────────────────────── */
+
+.xlist {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* One plain white card per question, generous inside and quiet at the edges.
+   Everything that is not the question itself is smaller, greyer, or below it. */
+.xq {
+  padding: 22px 26px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  transition: border-color 0.16s var(--ease), box-shadow 0.16s var(--ease);
+}
+
+.xq:focus-within {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+
+/* The one that decides pass or fail, marked at the edge so the question text
+   stays exactly as readable as every other one. */
+.xq.is-critical {
+  border-left: 3px solid var(--alert);
+}
+
+.xq-prompt {
+  margin: 0;
+  max-width: 82ch;
+  font-size: var(--t-read);
+  font-weight: 550;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+/* Part of the sentence, the way a printed question paper sets it. */
+.xq-num {
+  margin-right: 8px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* ── answering ─────────────────────────────────────────────────────────── */
+
+.xq-answer {
+  margin-top: 16px;
+}
+
+.xq-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--line-firm);
+  border-radius: var(--r-md);
+  background: var(--surface-sunk);
+  font: inherit;
+  font-size: var(--t-body);
+  line-height: 1.62;
+  color: var(--ink);
+  resize: vertical;
+  transition: border-color 0.14s var(--ease), background 0.14s var(--ease);
+}
+
+.xq-input::placeholder {
+  color: var(--ink-3);
+}
+
+.xq-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: var(--glow);
+}
+
+/* Belongs to the box above it, so it is right-aligned under it and stays quiet
+   until it turns green. */
+.xq-count {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  margin: 7px 0 0;
+  font-size: var(--t-micro);
+  color: var(--ink-3);
+}
+
+.xq-count.is-ok {
+  color: var(--ok);
+  font-weight: 650;
+}
+
+/* ── the strip under each question ─────────────────────────────────────── */
+
+.xq-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 13px;
+  border-top: 1px solid var(--line);
+}
+
+/* Label in grey, value in ink — the label is scaffolding, the value is the
+   thing being read. */
+.xq-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--t-micro);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.xq-tag b {
+  font-weight: 650;
+  color: var(--ink-2);
+}
+
+.xq-tag + .xq-tag::before {
+  content: '';
+  width: 3px;
+  height: 3px;
+  margin-right: 3px;
+  border-radius: 50%;
+  background: var(--line-firm);
+}
+
+.xq-tag.is-critical {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--alert);
+  color: #fff;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.xq-tag.is-critical::before {
+  display: none;
+}
+
+.xq-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  font-size: var(--t-micro);
+  color: var(--ink-3);
+}
+
+.xq-state.is-ok {
+  color: var(--ok);
+  font-weight: 650;
+}
+
+/* Pushed to the right of the metadata, and separated from it — these are
+   actions, and they were reading as two more tags in the same row. */
+.xq-foot-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  padding-left: 14px;
+}
+
+/* ── the mark, once it exists ──────────────────────────────────────────── */
+
+.xresult {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background: var(--surface-sunk);
+  border-left: 3px solid var(--line-firm);
+}
+
+.xresult.is-failed {
+  border-left-color: var(--alert);
+  background: color-mix(in srgb, var(--alert) 6%, transparent);
+}
+
+.xresult-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+}
+
+.xverdict {
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: var(--t-micro);
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.xverdict.is-correct {
+  background: color-mix(in srgb, var(--ok) 15%, transparent);
+  color: var(--ok);
+}
+
+.xverdict.is-partially-correct {
+  background: color-mix(in srgb, var(--warm) 16%, transparent);
+  color: var(--warm);
+}
+
+.xverdict.is-incorrect {
+  background: color-mix(in srgb, var(--alert) 13%, transparent);
+  color: var(--alert);
+}
+
+.xresult-marks {
+  font-size: var(--t-small);
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.xresult-answer {
+  margin: 0 0 9px;
+  padding-left: 12px;
+  border-left: 2px solid var(--line-firm);
+  font-size: var(--t-small);
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+
+.xresult-feedback {
+  margin: 0;
+  font-size: var(--t-small);
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+/* ── the action bar ────────────────────────────────────────────────────── */
+
+.xbar {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 16px 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.xbar.is-quiet {
+  box-shadow: none;
+  background: var(--surface-sunk);
+  justify-content: flex-start;
+}
+
+.xbar-progress {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 220px;
+  font-size: var(--t-small);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.xbar-track {
+  flex: 1;
+  height: 7px;
+  min-width: 90px;
+  border-radius: 999px;
+  background: var(--paper-deep);
+  overflow: hidden;
+}
+
+.xbar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.3s var(--ease);
+}
+
+.xbar-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  flex: 1;
+  min-width: 200px;
+  font-size: var(--t-small);
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+
+.xbar-note svg {
+  flex: none;
+}
+
+@media (max-width: 720px) {
+  .xpage-hero {
+    padding: 22px 20px;
+  }
+
+  .xpage-stats {
+    width: 100%;
+  }
+
+  .xpage-stat {
+    flex: 1;
+  }
+
+  .xcard-rail {
+    width: 42px;
+  }
+
+  .xcard-body {
+    padding: 16px 16px 18px;
+  }
+
+  .xbar .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xbar-fill {
+    transition: none;
+  }
+}
+
+/* ── the confirm dialog ────────────────────────────────────────────────── */
+
+/* Its own classes rather than the dashboard's `.dialog-*`: those live in
+   dashboard.css, which this page never loads, and pulling a shared modal out
+   into base.css is a wider change than one dialog justifies. */
+
+.xconfirm-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(16, 24, 40, 0.45);
+  backdrop-filter: blur(2px);
+  animation: xfade 0.14s var(--ease);
+}
+
+.xconfirm {
+  width: min(480px, 100%);
+  padding: 26px 28px 22px;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  animation: xrise 0.18s var(--ease);
+}
+
+.xconfirm h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--t-h2);
+  font-weight: 660;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.xconfirm-lede {
+  margin: 8px 0 0;
+  font-size: var(--t-small);
+  color: var(--ink-3);
+}
+
+.xconfirm-points {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin: 18px 0 0;
+  padding: 16px 18px;
+  border-radius: var(--r-md);
+  background: var(--surface-sunk);
+  list-style: none;
+  font-size: var(--t-small);
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+/* A quiet marker, so the one red line below is the only thing that shouts. */
+.xconfirm-points li {
+  position: relative;
+  padding-left: 16px;
+}
+
+.xconfirm-points li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--line-firm);
+}
+
+.xconfirm-points li.is-critical {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--alert) 9%, transparent);
+  color: var(--alert);
+}
+
+.xconfirm-points li.is-critical::before {
+  display: none;
+}
+
+.xconfirm-points li.is-critical svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+.xconfirm-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+@keyframes xfade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes xrise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xconfirm-scrim,
+  .xconfirm {
+    animation: none;
+  }
+}
