@@ -128,8 +128,10 @@ async def _ensure_indexes(db: AsyncIOMotorDatabase) -> None:
     # A case lists by who was in it; its logs read together, in role order.
     await db["cases"].create_index([("participants.user_id", ASCENDING), ("created_at", DESCENDING)])
     await db["entries"].create_index([("case_id", ASCENDING)])
-    # One log per participant per case. Partial, because entries predating cases
-    # have no `case_id` and would otherwise all collide on null.
+    # One log per participant per case, enforced here rather than only in the
+    # route: an application check is a request, an index is a guarantee.
+    # Partial, because entries predating cases have no `case_id` and would
+    # otherwise all collide on null.
     await db["entries"].create_index(
         [("case_id", ASCENDING), ("resident_id", ASCENDING)],
         unique=True,

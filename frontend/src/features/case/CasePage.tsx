@@ -346,6 +346,7 @@ function RosterRow({
               {open ? 'Hide' : 'Read'}
             </button>
           )}
+
           {/* Once released the exercise is frozen — the API refuses edits with a
               409 — so the builder is only offered while it can still be used. */}
           {written && mayOpen && isProfessor && (

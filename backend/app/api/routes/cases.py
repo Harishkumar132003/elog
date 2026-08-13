@@ -236,9 +236,11 @@ async def add_log(
 ) -> dict[str, Any]:
     """Your own account of a case you were in.
 
-    The clinical facts come from the case, so this is only the participant's own
-    words — what they did, saw or decided. Everything the downstream stages read
-    is copied down onto the log, so they never need to know a case exists.
+    The clinical facts come from the case, so this is only what the participant
+    themselves did. Everything the downstream stages read is copied down onto
+    the log, so they never need to know a case exists.
+
+    One per person per case, enforced by a unique index as well as here.
     """
     case = await _visible_case(case_id, participant)
 
@@ -246,6 +248,7 @@ async def add_log(
     seat = next((p for p in case.get("participants", []) if p["user_id"] == me), None)
     if seat is None:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "You were not part of this case")
+
 
     now = datetime.now(UTC)
     document = {

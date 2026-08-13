@@ -555,3 +555,118 @@
     justify-content: flex-end;
   }
 }
+
+/* ── a participant's logs ──────────────────────────────────────────────── */
+
+/* Indented under the person, so the roster still reads as one row per person
+   even when someone has logged a case twice. */
+.log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 10px 0 0 34px;
+  padding: 0;
+  list-style: none;
+}
+
+.log-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 10px 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface-sunk);
+}
+
+.log-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.log-row-when {
+  font-size: var(--t-micro);
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.log-row-when b {
+  color: var(--ink-2);
+}
+
+/* The first line of what they wrote — enough to tell one log from another
+   without printing the account into the roster. */
+.log-row-excerpt {
+  font-size: var(--t-tiny);
+  line-height: 1.45;
+  color: var(--ink-2);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.log-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+}
+
+.log-row .roster-row-log {
+  width: 100%;
+  background: var(--surface);
+}
+
+@media (max-width: 720px) {
+  .log-list {
+    margin-left: 0;
+  }
+
+  .log-row-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* The case has closed to further logs. A note rather than a silently missing
+   form — a control that vanishes reads as a fault. */
+.case-closed {
+  margin: 0;
+  padding: 14px 18px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--warm);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  font-size: var(--t-small);
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+/* Rewording a log, in place in the roster. */
+.log-edit {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.log-edit .textbox {
+  min-height: 110px;
+}
+
+.log-edit-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 9px;
+}
+
+.log-edit-actions .case-hint {
+  margin-right: auto;
+  font-size: var(--t-micro);
+}
