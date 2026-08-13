@@ -44,7 +44,15 @@ COGNITIVE_LEVELS = [name for name, _ in COGNITIVE]
 AFFECTIVE_LEVELS = [name for name, _ in AFFECTIVE]
 PSYCHOMOTOR_LEVELS = [name for name, _ in PSYCHOMOTOR]
 
-# "not the active one" for most reasoning questions — an explicit opt-out value.
+# The only psychomotor levels a written reasoning exercise can reach — the first
+# three, which are about attending, readiness and imitation. Mechanism and above
+# describe performed skill, and skill is judged by watching someone operate, not
+# by reading what they wrote about it. Offering the upper four would invite a
+# claim the exercise has no way to support.
+PSYCHOMOTOR_ASSESSABLE = [name for name, _ in PSYCHOMOTOR[:3]]
+
+# "not the active one" — kept for questions written before psychomotor was
+# tagged, whose stored value is this.
 PSYCHOMOTOR_NOT_ASSESSED = "Not assessed"
 
 DEFAULT_MARKS = 10

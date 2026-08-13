@@ -168,6 +168,7 @@ export const updateExercise = (entryId: string, questions: Question[]) =>
         critical: q.critical,
         cognitive: q.cognitive,
         affective: q.affective,
+        psychomotor: q.psychomotor,
       })),
     },
   })

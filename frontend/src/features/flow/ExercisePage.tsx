@@ -3,7 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AlertIcon, ArrowIcon, CheckIcon } from '../../components/icons'
 import { removeQuestion } from '../../lib/cases'
 import { getCase, releaseExercise, submitAttempt, updateExercise } from '../../lib/entries'
-import type { Attempt, AuthUser, Entry, Exercise } from '../../types'
+import type { Attempt, AuthUser, CandidateAxes, Entry, Exercise } from '../../types'
+import { QuestionComposer } from './QuestionComposer'
 import { ResultPanel } from './ResultPanel'
 import './flow.css'
 import './exercise-page.css'
@@ -16,8 +17,6 @@ interface Props {
   entryId: string
   user: AuthUser
   onBack: () => void
-  /** Back to the builder to write another. Professor only. */
-  onAddMore: () => void
   /** The shared case this log belongs to, when the route knows it. */
   onOpenCase?: () => void
 }
@@ -29,9 +28,13 @@ interface Props {
  *  editable differs — a second, professor-only preview would be one more thing
  *  to keep in sync with this one, and would drift.
  */
-export function ExercisePage({ entryId, user, onBack, onAddMore, onOpenCase }: Props) {
+export function ExercisePage({ entryId, user, onBack, onOpenCase }: Props) {
   const [entry, setEntry] = useState<Entry | null>(null)
   const [exercise, setExercise] = useState<Exercise | null>(null)
+  const [axes, setAxes] = useState<CandidateAxes | null>(null)
+  /** The composer is mounted in place rather than on its own page: what to ask
+   *  next is decided while looking at what has already been asked. */
+  const [composing, setComposing] = useState(false)
   const [attempt, setAttempt] = useState<Attempt | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -53,6 +56,7 @@ export function ExercisePage({ entryId, user, onBack, onAddMore, onOpenCase }: P
       .then((snapshot) => {
         if (!live) return
         setEntry(snapshot.entry)
+        setAxes(snapshot.axes)
         setExercise(snapshot.exercise)
         setAttempt(snapshot.attempt)
       })
@@ -187,7 +191,7 @@ export function ExercisePage({ entryId, user, onBack, onAddMore, onOpenCase }: P
     )
   }
 
-  if (!entry || !exercise) {
+  if (!entry || (!exercise && !isProfessor)) {
     return (
       <>
         <div className="page-head">
@@ -206,11 +210,7 @@ export function ExercisePage({ entryId, user, onBack, onAddMore, onOpenCase }: P
           <button type="button" className="xnav-back" onClick={onBack}>
             <span aria-hidden>←</span> Back
           </button>
-          {isProfessor && (
-            <button type="button" className="btn btn-primary btn-sm" onClick={onAddMore}>
-              Write the questions
-            </button>
-          )}
+
         </nav>
       </>
     )
@@ -230,11 +230,13 @@ export function ExercisePage({ entryId, user, onBack, onAddMore, onOpenCase }: P
               The whole case
             </button>
           )}
-          {canEdit && (
-            // The commonest thing to want after reading the set is one more
-            // question. Without this it is two navigations away.
-            <button type="button" className="btn btn-quiet btn-sm" onClick={onAddMore}>
-              + Add another question
+          {canEdit && !composing && (
+            <button
+              type="button"
+              className="btn btn-quiet btn-sm"
+              onClick={() => setComposing(true)}
+            >
+              + Add question
             </button>
           )}
         </div>
@@ -253,7 +255,7 @@ export function ExercisePage({ entryId, user, onBack, onAddMore, onOpenCase }: P
           </p>
         </header>
       ) : (
-        <header className={`xpage-hero${exercise.released ? ' is-live' : ''}`}>
+        <header className={`xpage-hero${exercise?.released ? ' is-live' : ''}`}>
           <div className="xpage-hero-text">
             <span className="xpage-eyebrow">
               {entry.role_label} · {entry.subject}
@@ -393,7 +395,13 @@ export function ExercisePage({ entryId, user, onBack, onAddMore, onOpenCase }: P
                   Axis: <b>{question.axis_label}</b>
                 </span>
                 <span className="xq-tag">
-                  Level: <b>{question.cognitive}</b>
+                  COG: <b>{question.cognitive}</b>
+                </span>
+                <span className="xq-tag">
+                  AFF: <b>{question.affective}</b>
+                </span>
+                <span className="xq-tag">
+                  PSY: <b>{question.psychomotor}</b>
                 </span>
                 <span className="xq-tag">
                   Marks: <b>{question.marks}</b>
@@ -438,6 +446,23 @@ export function ExercisePage({ entryId, user, onBack, onAddMore, onOpenCase }: P
         })}
       </ol>
 
+      {/* ── writing the next one, in place ─────────────────────────────── */}
+      {canEdit && composing && axes && (
+        <QuestionComposer
+          entryId={entryId}
+          axes={axes}
+          existing={questions}
+          onSaved={setExercise}
+          onClose={() => setComposing(false)}
+        />
+      )}
+
+      {canEdit && !composing && (
+        <button type="button" className="xadd" onClick={() => setComposing(true)}>
+          + Add {questions.length === 0 ? 'the first question' : 'another question'}
+        </button>
+      )}
+
       {error && <p className="entry-error">{error}</p>}
 
       {/* ── the action bar ─────────────────────────────────────────────── */}
@@ -477,7 +502,7 @@ export function ExercisePage({ entryId, user, onBack, onAddMore, onOpenCase }: P
       )}
 
       {/* The professor's own footer: this is the last look before it goes out. */}
-      {isProfessor && !exercise.released && (
+      {isProfessor && !exercise?.released && questions.length > 0 && (
         <div className="xbar">
           <p className="xbar-note">
             {criticalCount === 1
@@ -496,7 +521,7 @@ export function ExercisePage({ entryId, user, onBack, onAddMore, onOpenCase }: P
         </div>
       )}
 
-      {isProfessor && exercise.released && !attempt && (
+      {isProfessor && exercise?.released && !attempt && (
         <div className="xbar is-quiet">
           <p className="xbar-note">
             <CheckIcon width={15} height={15} />

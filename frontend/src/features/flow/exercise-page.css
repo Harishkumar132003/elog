@@ -746,3 +746,34 @@
     animation: none;
   }
 }
+
+/* Adding the next question, in place. A dashed full-width target rather than a
+   button in a corner: it is the professor's main action on this screen while
+   the set is still being written, and it belongs at the end of the list where
+   the next question will appear. */
+.xadd {
+  width: 100%;
+  padding: 16px;
+  border: 1px dashed var(--line-firm);
+  border-radius: var(--r-lg);
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-small);
+  font-weight: 600;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: border-color 0.14s var(--ease), color 0.14s var(--ease),
+    background 0.14s var(--ease);
+}
+
+.xadd:hover {
+  border-color: var(--accent);
+  color: var(--accent-deep);
+  background: var(--accent-soft);
+}
+
+.xadd:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--glow);
+}

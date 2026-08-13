@@ -21,7 +21,7 @@ from app.core.config import get_settings
 from app.core.constants import DopsRole, role_labels
 from app.data.axes import BY_ID as AXIS_BY_ID
 from app.data.axes import subject_class
-from app.data.bloom import DEFAULT_MARKS, PSYCHOMOTOR_NOT_ASSESSED
+from app.data.bloom import DEFAULT_MARKS, PSYCHOMOTOR_ASSESSABLE
 from app.services.corti import CortiError
 from app.services.corti_templates import question_template, run_template
 
@@ -70,6 +70,25 @@ _FALLBACK_AFFECTIVE = {
     "uncertainty": "Valuing",
     "concept": "Receiving",
 }
+
+# Psychomotor follows the ROLE, not the axis: what someone's hands were doing is
+# a fact about their part in the case, and the axis only changes what is asked
+# about it. Capped at the three preparatory levels — see PSYCHOMOTOR_ASSESSABLE.
+_FALLBACK_PSYCHOMOTOR: dict[str, str] = {
+    DopsRole.OBSERVED: "Perception",       # watching, and reading the patient
+    DopsRole.SUPERVISED: "Guided response",  # doing it under direction
+    DopsRole.INDEPENDENT: "Guided response",
+    DopsRole.SUPERVISOR: "Set",            # readiness — knowing when to step in
+    DopsRole.TOPIC: "Perception",
+}
+
+
+def _role_of(entry: dict[str, Any]) -> DopsRole:
+    return DopsRole(entry["role"]) if entry.get("role") in set(DopsRole) else DopsRole.SUPERVISED
+
+
+def default_psychomotor(entry: dict[str, Any]) -> str:
+    return _FALLBACK_PSYCHOMOTOR.get(_role_of(entry), "Perception")
 
 
 def default_levels(axis_id: str) -> tuple[str, str]:
@@ -202,7 +221,7 @@ def _scripted(slots: list[dict[str, Any]], entry: dict[str, Any]) -> dict[int, d
             ),
             "cognitive": _FALLBACK_COGNITIVE.get(str(axis["family"]), "Apply"),
             "affective": _FALLBACK_AFFECTIVE.get(str(axis["family"]), "Responding"),
-            "psychomotor": PSYCHOMOTOR_NOT_ASSESSED,
+            "psychomotor": default_psychomotor(entry),
             "marks": int(slot.get("marks") or DEFAULT_MARKS),
             "critical": bool(slot.get("critical")),
         }
@@ -249,8 +268,12 @@ async def generate_questions(
             or _FALLBACK_COGNITIVE.get(family, "Apply"),
             "affective": fields.get(f"q{index}_affective")
             or _FALLBACK_AFFECTIVE.get(family, "Responding"),
-            # §3.3 — psychomotor is assessed on real patients, not by this engine.
-            "psychomotor": PSYCHOMOTOR_NOT_ASSESSED,
+            # §3.3 caps this at the preparatory levels: performed skill is judged
+            # on a real patient, not from an answer. Anything outside the three
+            # falls back to what the role implies.
+            "psychomotor": fields.get(f"q{index}_psychomotor")
+            if fields.get(f"q{index}_psychomotor") in PSYCHOMOTOR_ASSESSABLE
+            else default_psychomotor(entry),
             "marks": int(slot.get("marks") or DEFAULT_MARKS),
             "critical": bool(slot.get("critical")),
         }

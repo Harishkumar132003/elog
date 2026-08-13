@@ -3,13 +3,18 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowIcon, CheckIcon, NodeIcon } from '../../components/icons'
 import { Dictation, canDictate } from '../entry/Dictation'
 import { TranscribeLoader } from '../entry/TranscribeLoader'
-import { addLog, getCaseRecord, listLogs } from '../../lib/cases'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
+import { addLog, deleteCase, getCaseRecord, listLogs } from '../../lib/cases'
 import type { AuthUser, Case, Entry, Participant } from '../../types'
 import '../entry/entry.css'
 import './case.css'
 
 const MIN_CHARS = 20
 const MAX_NARRATIVE = 4000
+
+/* Built but not exposed — set true to bring each back on the log form. */
+const SHOW_LOG_GUIDANCE = false
+const SHOW_DICTATION = false
 
 const when = (value: string | null | undefined) =>
   value
@@ -29,6 +34,8 @@ interface CasePageProps {
   onBuild: (entryId: string) => void
   /** Open the exercise page — read it, or answer it. */
   onAnswer: (entryId: string) => void
+  /** The case is gone; there is nothing left on this route. */
+  onDeleted: () => void
 }
 
 /** One case: the shared facts, who was in it, and each person's own log.
@@ -36,7 +43,15 @@ interface CasePageProps {
  *  Everything loads before anything renders. A roster that fills in row by row
  *  reads as the page correcting itself, and the professor's decision about
  *  whose questions to write depends on seeing the whole roster at once. */
-export function CasePage({ caseId, user, onChanged, onOpenLog, onBuild, onAnswer }: CasePageProps) {
+export function CasePage({
+  caseId,
+  user,
+  onChanged,
+  onOpenLog,
+  onBuild,
+  onAnswer,
+  onDeleted,
+}: CasePageProps) {
   const [record, setRecord] = useState<Case | null>(null)
   const [logs, setLogs] = useState<Entry[]>([])
   const [loading, setLoading] = useState(true)
@@ -45,6 +60,8 @@ export function CasePage({ caseId, user, onChanged, onOpenLog, onBuild, onAnswer
   const [narrative, setNarrative] = useState('')
   const [saving, setSaving] = useState(false)
   const [transcribing, setTranscribing] = useState<{ seconds: number } | null>(null)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const textarea = useRef<HTMLTextAreaElement>(null)
 
   const load = useCallback(async () => {
@@ -96,6 +113,20 @@ export function CasePage({ caseId, user, onChanged, onOpenLog, onBuild, onAnswer
     }
   }, [narrative, saving, caseId, load, onChanged])
 
+  const remove = useCallback(async () => {
+    if (deleting) return
+    setDeleting(true)
+    setError(null)
+    try {
+      await deleteCase(caseId)
+      onDeleted()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not delete this case')
+      setDeleting(false)
+      setConfirmingDelete(false)
+    }
+  }, [caseId, deleting, onDeleted])
+
   if (loading) {
     return (
       <div className="case-boot">
@@ -141,6 +172,13 @@ export function CasePage({ caseId, user, onChanged, onOpenLog, onBuild, onAnswer
           </span>
           <h1 className="page-title">{record.diagnosis ?? 'Case'}</h1>
         </div>
+        <button
+          type="button"
+          className="btn btn-quiet btn-danger"
+          onClick={() => setConfirmingDelete(true)}
+        >
+          Delete case
+        </button>
       </header>
 
       {/* ── the shared facts ──────────────────────────────────────────── */}
@@ -186,22 +224,26 @@ export function CasePage({ caseId, user, onChanged, onOpenLog, onBuild, onAnswer
               <h2 className="case-h2">Add your own account</h2>
             </div>
           </header>
-          <p className="case-lede">
-            The clinical facts are above and shared. Record what <em>you</em> did in this case —
-            your part in it, in order. Leave the reasoning out: that is what the questions
-            will ask you for.
-          </p>
+          {SHOW_LOG_GUIDANCE && (
+            <p className="case-lede">
+              The clinical facts are above and shared. Record what <em>you</em> did in this
+              case — your part in it, in order. Leave the reasoning out: that is what the
+              questions will ask you for.
+            </p>
+          )}
 
-          <div className="field-label-row">
-            <span className="field-label">Your account</span>
-            {canDictate() && (
-              <Dictation
-                onText={appendDictated}
-                onBusy={(busy, seconds) => setTranscribing(busy ? { seconds } : null)}
-                disabled={saving}
-              />
-            )}
-          </div>
+          {(SHOW_LOG_GUIDANCE || SHOW_DICTATION) && (
+            <div className="field-label-row">
+              {SHOW_LOG_GUIDANCE && <span className="field-label">Your account</span>}
+              {SHOW_DICTATION && canDictate() && (
+                <Dictation
+                  onText={appendDictated}
+                  onBusy={(busy, seconds) => setTranscribing(busy ? { seconds } : null)}
+                  disabled={saving}
+                />
+              )}
+            </div>
+          )}
 
           <div className={`textbox-wrap${transcribing ? ' is-busy' : ''}`}>
             <textarea
@@ -275,6 +317,25 @@ export function CasePage({ caseId, user, onChanged, onOpenLog, onBuild, onAnswer
           ))}
         </ul>
       </section>
+
+      {confirmingDelete && (
+        <ConfirmDialog
+          danger
+          busy={deleting}
+          title="Delete this case?"
+          lede={record.diagnosis ?? 'This case'}
+          points={[
+            `Every log on it goes — ${record.participants.filter((p) => p.has_logged).length} written so far.`,
+            'So does everything built on those logs: the questions, the marks and the recorded results.',
+            'Anyone else on this case loses their log and their exercise too.',
+            'This cannot be undone.',
+          ]}
+          confirmLabel="Delete the case"
+          cancelLabel="Keep it"
+          onConfirm={() => void remove()}
+          onCancel={() => setConfirmingDelete(false)}
+        />
+      )}
     </div>
   )
 }

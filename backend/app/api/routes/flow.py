@@ -17,7 +17,7 @@ from app.core.config import get_settings
 from app.core.constants import DopsRole, EntryStatus, Role, role_labels
 from app.data.axes import BY_ID as AXIS_BY_ID
 from app.data.axes import FAMILY_LABELS, Family, candidate_axes, subject_class
-from app.data.bloom import AFFECTIVE_LEVELS, COGNITIVE_LEVELS, PSYCHOMOTOR_NOT_ASSESSED
+from app.data.bloom import AFFECTIVE_LEVELS, COGNITIVE_LEVELS, PSYCHOMOTOR_ASSESSABLE
 from app.db import mongo
 from app.schemas.flow import (
     AttemptOut,
@@ -33,7 +33,12 @@ from app.schemas.flow import (
 )
 from app.services.axis_suggest import suggest_axes
 from app.services.parameter_suggest import suggest_parameters
-from app.services.exercise import default_levels, generate_one, generate_questions
+from app.services.exercise import (
+    default_levels,
+    default_psychomotor,
+    generate_one,
+    generate_questions,
+)
 from app.services.scoring import pending_summary, score_answers
 
 router = APIRouter(prefix="/entries", tags=["flow"])
@@ -367,7 +372,9 @@ async def add_question(
             # otherwise — never a value outside the two closed Bloom lists.
             "cognitive": payload.cognitive if payload.cognitive in COGNITIVE_LEVELS else cognitive,
             "affective": payload.affective if payload.affective in AFFECTIVE_LEVELS else affective,
-            "psychomotor": PSYCHOMOTOR_NOT_ASSESSED,
+            "psychomotor": payload.psychomotor
+            if payload.psychomotor in PSYCHOMOTOR_ASSESSABLE
+            else default_psychomotor(entry),
             "marks": payload.marks,
             "critical": payload.critical,
             # The wording came from the preview and may have been reworded since,
@@ -606,6 +613,9 @@ async def update_exercise(
                 "critical": edit.critical,
                 "cognitive": edit.cognitive,
                 "affective": edit.affective,
+                "psychomotor": edit.psychomotor
+                if edit.psychomotor in PSYCHOMOTOR_ASSESSABLE
+                else question.get("psychomotor") or default_psychomotor(entry),
             }
         )
 

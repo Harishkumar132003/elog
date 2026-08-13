@@ -22,6 +22,15 @@ export const listCases = () => api<{ items: Case[]; total: number }>('/cases')
 
 export const getCaseRecord = (caseId: string) => api<Case>(`/cases/${caseId}`)
 
+/** Remove a case and everything built on it — every log, and each log's
+ *  questions and marks. Open to anyone who can see the case. Returns what it
+ *  removed. */
+export const deleteCase = (caseId: string) =>
+  api<{ attempts: number; exercises: number; certifications: number; logs: number }>(
+    `/cases/${caseId}`,
+    { method: 'DELETE' },
+  )
+
 /** Your own account of a case you were in. One per person per case. */
 export const addLog = (caseId: string, narrative: string) =>
   api<Entry>(`/cases/${caseId}/logs`, { method: 'POST', body: { narrative } })
@@ -47,6 +56,7 @@ export interface AddQuestionPayload {
   prompt?: string
   cognitive?: string
   affective?: string
+  psychomotor?: string
 }
 
 /** Write one question and hand it back WITHOUT storing it.

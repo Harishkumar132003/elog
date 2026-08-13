@@ -10,7 +10,6 @@ import { Configuration } from './features/config/Configuration'
 import { Dashboard } from './features/dashboard/Dashboard'
 import { CaseFlow } from './features/flow/CaseFlow'
 import { ExercisePage } from './features/flow/ExercisePage'
-import { QuestionBuilder } from './features/flow/QuestionBuilder'
 import { EmptyState } from './features/views/EmptyState'
 import { Logbook } from './features/views/Logbook'
 import { Reference } from './features/views/Reference'
@@ -101,28 +100,14 @@ function CasePageRoute() {
       user={user}
       onChanged={() => void refresh()}
       onOpenLog={(entryId) => navigate(`/cases/${caseId}/logs/${entryId}`)}
-      onBuild={(entryId) => navigate(`/cases/${caseId}/logs/${entryId}/questions`)}
+      // Writing questions and reading them are the same screen now, so both
+      // land on the exercise page.
+      onBuild={(entryId) => navigate(`/cases/${caseId}/logs/${entryId}/exercise`)}
       onAnswer={(entryId) => navigate(`/cases/${caseId}/logs/${entryId}/exercise`)}
-    />
-  )
-}
-
-function QuestionBuilderRoute() {
-  const { caseId, entryId } = useParams<{ caseId: string; entryId: string }>()
-  const navigate = useNavigate()
-  if (!entryId) return <Navigate to="/cases" replace />
-
-  // `log` is the placeholder a log reached from the queue carries — there is no
-  // case to go back to, so fall through to the list.
-  const back = caseId && caseId !== 'log' ? `/cases/${caseId}` : '/cases'
-  return (
-    <QuestionBuilder
-      key={entryId}
-      entryId={entryId}
-      onDone={() => navigate(back)}
-      // Keep the case in the path. Dropping it left the exercise page with no
-      // way to know where it came from, so its Back went to the case list.
-      onPreview={() => navigate(`/cases/${caseId ?? 'log'}/logs/${entryId}/exercise`)}
+      onDeleted={() => {
+        void refresh()
+        navigate('/cases', { replace: true })
+      }}
     />
   )
 }
@@ -147,8 +132,6 @@ function ExerciseRoute() {
         void refresh()
         goBack()
       }}
-      // Straight back to writing, without going through the case page.
-      onAddMore={() => navigate(`/cases/${caseId ?? 'log'}/logs/${entryId}/questions`)}
       onOpenCase={caseId && caseId !== 'log' ? () => navigate(`/cases/${caseId}`) : undefined}
     />
   )
@@ -174,7 +157,7 @@ function ToAnswerRoute() {
 function CasesRoute() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { cases, loading } = useWorkspace()
+  const { cases, loading, refresh } = useWorkspace()
   if (!user) return null
 
   return (
@@ -184,6 +167,7 @@ function CasesRoute() {
       loading={loading}
       onOpen={(caseId) => navigate(`/cases/${caseId}`)}
       onNew={user.role === 'resident' ? () => navigate('/cases/new') : undefined}
+      onDeleted={() => void refresh()}
     />
   )
 }
@@ -229,7 +213,7 @@ function LogRoute() {
       onChanged={upsert}
       // A log reached directly (from the queue) has no case in the URL; the
       // builder only needs the entry, so the case segment is cosmetic.
-      onBuild={(id) => navigate(`/cases/${caseId ?? 'log'}/logs/${id}/questions`)}
+      onBuild={(id) => navigate(`/cases/${caseId ?? 'log'}/logs/${id}/exercise`)}
       onAnswer={(id) => navigate(`/cases/${caseId ?? 'log'}/logs/${id}/exercise`)}
     />
   )
@@ -304,14 +288,6 @@ export default function App() {
               }
             />
             <Route path="cases/:caseId" element={<CasePageRoute />} />
-            <Route
-              path="cases/:caseId/logs/:entryId/questions"
-              element={
-                <RequireRole role="professor">
-                  <QuestionBuilderRoute />
-                </RequireRole>
-              }
-            />
             <Route path="cases/:caseId/logs/:entryId/exercise" element={<ExerciseRoute />} />
             <Route path="cases/:caseId/logs/:entryId" element={<LogRoute />} />
             <Route path="logs/:entryId/exercise" element={<ExerciseRoute />} />

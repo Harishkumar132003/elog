@@ -381,3 +381,113 @@ ol {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ── confirm dialog ────────────────────────────────────────────────────── */
+
+.confirm-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(16, 24, 40, 0.45);
+  backdrop-filter: blur(2px);
+  animation: confirm-fade 0.14s var(--ease);
+}
+
+.confirm {
+  width: min(480px, 100%);
+  padding: 26px 28px 22px;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  animation: confirm-rise 0.18s var(--ease);
+}
+
+.confirm h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--t-h2);
+  font-weight: 660;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.confirm-lede {
+  margin: 8px 0 0;
+  font-size: var(--t-small);
+  line-height: 1.55;
+  color: var(--ink-3);
+}
+
+.confirm-points {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin: 18px 0 0;
+  padding: 16px 18px;
+  border-radius: var(--r-md);
+  background: var(--surface-sunk);
+  list-style: none;
+  font-size: var(--t-small);
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.confirm-points li {
+  position: relative;
+  padding-left: 16px;
+}
+
+.confirm-points li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--line-firm);
+}
+
+.confirm-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+/* A filled destructive button. The outline `.is-danger` modifier is for
+   controls that live inside a card; this one ends a dialog. */
+.btn-danger {
+  background: var(--alert);
+  border-color: var(--alert);
+  color: #fff;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--alert) 88%, #000);
+  border-color: color-mix(in srgb, var(--alert) 88%, #000);
+}
+
+@keyframes confirm-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes confirm-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirm-scrim,
+  .confirm {
+    animation: none;
+  }
+}

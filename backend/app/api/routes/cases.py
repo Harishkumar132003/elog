@@ -292,6 +292,42 @@ async def add_log(
     return saved
 
 
+@router.delete("/{case_id}", status_code=status.HTTP_200_OK)
+async def delete_case(case_id: str, user: CurrentUser) -> dict[str, int]:
+    """Remove a case and everything built on it.
+
+    Open to anyone who can see the case — every participant, and the professor.
+    `_visible_case` is the whole permission check: someone who was not in it
+    gets the same 404 they get for reading it.
+
+    The cascade is the point. A case's logs are `entries`, and each entry may
+    carry a certification, an exercise and attempts; deleting only the case
+    would leave all of that orphaned but still counted by the dashboard, which
+    reads entries directly. Children go first so a failure part-way leaves
+    something reachable rather than a case pointing at nothing.
+
+    Returns what it removed, so the caller can say so rather than guess.
+    """
+    case = await _visible_case(case_id, user)
+    entry_ids = [
+        log["_id"] async for log in mongo.entries().find({"case_id": case["_id"]}, {"_id": 1})
+    ]
+    scope = {"entry_id": {"$in": entry_ids}}
+
+    removed = {
+        "attempts": (await mongo.attempts().delete_many(scope)).deleted_count,
+        "exercises": (await mongo.exercises().delete_many(scope)).deleted_count,
+        "certifications": (await mongo.certifications().delete_many(scope)).deleted_count,
+        "logs": (await mongo.entries().delete_many({"_id": {"$in": entry_ids}})).deleted_count,
+    }
+    await mongo.cases().delete_one({"_id": case["_id"]})
+
+    logger.info(
+        "Case %s deleted by %s (%s): %s", case_id, user.get("name"), user.get("role"), removed
+    )
+    return removed
+
+
 @router.get("/{case_id}/logs", response_model=list[EntryDetail])
 async def list_logs(case_id: str, user: CurrentUser) -> list[dict[str, Any]]:
     """The logs on this case that the caller is allowed to read.

@@ -27,7 +27,7 @@ from typing import Any
 from app.core.config import get_settings
 from app.core.constants import Subject
 from app.data.axes import ALL_IDS as ALL_AXIS_IDS
-from app.data.bloom import AFFECTIVE_LEVELS, COGNITIVE_LEVELS
+from app.data.bloom import AFFECTIVE_LEVELS, COGNITIVE_LEVELS, PSYCHOMOTOR_ASSESSABLE
 from app.db import mongo
 from app.services.corti import CortiError, corti
 
@@ -158,6 +158,22 @@ def _question_sections(slots: int = MAX_QUESTIONS) -> list[dict[str, Any]]:
                     f"{slot}."
                 ),
                 "schema": {"type": "string", "enum": AFFECTIVE_LEVELS},
+            }
+        )
+        sections.append(
+            {
+                "key": f"q{slot}_psychomotor",
+                "heading": f"Question {slot} psychomotor level",
+                "prompt": (
+                    f"Simpson's psychomotor level engaged by question {slot}. Only the "
+                    "three preparatory levels are available, because a written answer "
+                    "cannot demonstrate performed skill: 'Perception' where the "
+                    "question turns on what was noticed or read from the patient, "
+                    "'Set' where it turns on readiness — anticipating, preparing, "
+                    "knowing when to act — and 'Guided response' where it turns on "
+                    f"carrying out a step under direction. Empty if there is no SLOT {slot}."
+                ),
+                "schema": {"type": "string", "enum": PSYCHOMOTOR_ASSESSABLE},
             }
         )
     return sections

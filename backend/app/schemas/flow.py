@@ -96,6 +96,7 @@ class QuestionAdd(BaseModel):
     prompt: str | None = Field(default=None, min_length=10, max_length=1200)
     cognitive: str | None = Field(default=None, max_length=40)
     affective: str | None = Field(default=None, max_length=40)
+    psychomotor: str | None = Field(default=None, max_length=40)
 
 
 class QuestionOut(BaseModel):
@@ -133,6 +134,7 @@ class QuestionEdit(BaseModel):
     critical: bool = False
     cognitive: str = Field(min_length=1, max_length=40)
     affective: str = Field(min_length=1, max_length=40)
+    psychomotor: str | None = Field(default=None, max_length=40)
 
 
 class ExerciseUpdate(BaseModel):

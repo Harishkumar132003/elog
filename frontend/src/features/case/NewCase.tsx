@@ -14,6 +14,9 @@ const MIN_CHARS = 20
 /** Mirrors `max_narrative_chars` on the server. */
 const MAX_NARRATIVE = 4000
 
+/** Built but not exposed — set true to bring dictation back on the case form. */
+const SHOW_DICTATION = false
+
 const PLACEHOLDER: Record<string, string> = {
   clinical:
     'e.g. 55F, fall on outstretched hand. Intra-articular distal radius fracture. Closed reduction attempted, unsatisfactory. Proceeded to ORIF with volar locking plate.',
@@ -397,7 +400,7 @@ export function NewCase({ onCreated }: { onCreated: (record: Case) => void }) {
             <label className="field-label" htmlFor="narrative">
               {meta?.subject_class === 'pre-clinical' ? 'What was studied?' : 'What happened?'}
             </label>
-            {canDictate() && (
+            {SHOW_DICTATION && canDictate() && (
               <Dictation
                 onText={appendDictated}
                 onBusy={(busy, seconds) => setTranscribing(busy ? { seconds } : null)}
